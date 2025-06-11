@@ -538,14 +538,15 @@ if uploaded_file is not None:
         st.header("🔍 Análises Avançadas")
         
         # Criar subabas para análises avançadas
-        sub_tab1, sub_tab2, sub_tab3, sub_tab4, sub_tab5, sub_tab6, sub_tab7 = st.tabs([
+        sub_tab1, sub_tab2, sub_tab3, sub_tab4, sub_tab5, sub_tab6, sub_tab7, sub_tab8 = st.tabs([
             "⏱️ Tempo de Permanência",
             "🔄 Análise por Serviço",
             "🌍 Análise por País",
             "📏 Dimensões dos Navios",
             "📊 Correlações",
             "⚓ Análise por Berço",
-            "📅 Cancelamentos por Dia"
+            "📅 Cancelamentos por Dia",
+            "💰 Análise de Custos"
         ])
         
         with sub_tab1:
@@ -829,6 +830,214 @@ if uploaded_file is not None:
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("⚠️ Coluna de data não encontrada nos dados.")
+
+        with sub_tab8:
+            st.subheader("💰 Análise de Custos de Exportação")
+            
+            # Valores médios de custos (em USD)
+            custo_medio_teu = 2500  # Custo médio por TEU para exportação
+            custo_medio_operacao = 8000  # Custo médio de operação portuária para exportação
+            custo_medio_documentacao = 3500  # Custo médio de documentação para exportação
+            custo_medio_armazenagem = 200  # Custo médio de armazenagem por TEU/dia
+            custo_medio_inspecao = 1500  # Custo médio de inspeção por operação
+            
+            # Calcular custos
+            if col_conteineres is not None:
+                # Converter coluna de contêineres para numérico
+                df_cancel[col_conteineres] = pd.to_numeric(df_cancel[col_conteineres], errors='coerce')
+                
+                # Calcular custos básicos
+                df_cancel['Custo_Containers'] = df_cancel[col_conteineres] * custo_medio_teu
+                df_cancel['Custo_Operacao'] = custo_medio_operacao
+                df_cancel['Custo_Documentacao'] = custo_medio_documentacao
+                
+                # Calcular custos adicionais
+                if col_data is not None:
+                    # Calcular dias de armazenagem (assumindo média de 5 dias)
+                    df_cancel['Custo_Armazenagem'] = df_cancel[col_conteineres] * custo_medio_armazenagem * 5
+                else:
+                    df_cancel['Custo_Armazenagem'] = 0
+                
+                df_cancel['Custo_Inspecao'] = custo_medio_inspecao
+                
+                # Custo total
+                df_cancel['Custo_Total'] = (
+                    df_cancel['Custo_Containers'] + 
+                    df_cancel['Custo_Operacao'] + 
+                    df_cancel['Custo_Documentacao'] + 
+                    df_cancel['Custo_Armazenagem'] + 
+                    df_cancel['Custo_Inspecao']
+                )
+                
+                # Métricas principais
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    custo_total = df_cancel['Custo_Total'].sum()
+                    st.metric(
+                        "Custo Total Perdido",
+                        f"USD {custo_total:,.2f}",
+                        delta=f"{(custo_total/1000000):.2f}M USD"
+                    )
+                
+                with col2:
+                    custo_medio = df_cancel['Custo_Total'].mean()
+                    st.metric(
+                        "Custo Médio por Cancelamento",
+                        f"USD {custo_medio:,.2f}",
+                        delta="por operação"
+                    )
+                
+                with col3:
+                    total_containers = df_cancel[col_conteineres].sum()
+                    st.metric(
+                        "Total de TEUs Afetados",
+                        f"{total_containers:,.0f}",
+                        delta="contêineres"
+                    )
+                
+                # Gráfico de distribuição de custos
+                fig = px.box(
+                    df_cancel,
+                    y='Custo_Total',
+                    title='Distribuição dos Custos por Cancelamento',
+                    color_discrete_sequence=['#4CAF50']
+                )
+                fig.update_layout(yaxis_title="Custo (USD)")
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Análise por armador
+                if col_armador is not None:
+                    st.subheader("Custos por Armador")
+                    custos_por_armador = df_cancel.groupby(col_armador)['Custo_Total'].agg(['sum', 'mean', 'count']).reset_index()
+                    custos_por_armador.columns = ['Armador', 'Custo Total', 'Custo Médio', 'Quantidade']
+                    custos_por_armador = custos_por_armador.sort_values('Custo Total', ascending=False)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write("Top 10 Armadores por Custo Total:")
+                        st.dataframe(
+                            custos_por_armador.head(10),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                    
+                    with col2:
+                        fig = px.bar(
+                            custos_por_armador.head(10),
+                            x='Armador',
+                            y='Custo Total',
+                            title='Top 10 Armadores por Custo Total',
+                            color='Custo Total',
+                            color_continuous_scale='Viridis'
+                        )
+                        fig.update_layout(
+                            xaxis_title="Armador",
+                            yaxis_title="Custo Total (USD)",
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                
+                # Análise temporal dos custos
+                if col_data is not None:
+                    st.subheader("Evolução Temporal dos Custos")
+                    df_cancel['Mês'] = pd.to_datetime(df_cancel[col_data]).dt.to_period('M')
+                    custos_mensais = df_cancel.groupby('Mês')['Custo_Total'].sum().reset_index()
+                    custos_mensais['Mês'] = custos_mensais['Mês'].astype(str)
+                    
+                    fig = px.line(
+                        custos_mensais,
+                        x='Mês',
+                        y='Custo_Total',
+                        title='Evolução Mensal dos Custos',
+                        markers=True
+                    )
+                    fig.update_layout(
+                        xaxis_title="Mês",
+                        yaxis_title="Custo Total (USD)",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Detalhamento dos custos
+                st.subheader("Detalhamento dos Custos")
+                col1, col2 = st.columns(2)
+                with col1:
+                    custos_detalhados = {
+                        'Tipo de Custo': [
+                            'Contêineres',
+                            'Operação Portuária',
+                            'Documentação',
+                            'Armazenagem',
+                            'Inspeção'
+                        ],
+                        'Valor Total (USD)': [
+                            df_cancel['Custo_Containers'].sum(),
+                            df_cancel['Custo_Operacao'].sum(),
+                            df_cancel['Custo_Documentacao'].sum(),
+                            df_cancel['Custo_Armazenagem'].sum(),
+                            df_cancel['Custo_Inspecao'].sum()
+                        ]
+                    }
+                    st.dataframe(
+                        pd.DataFrame(custos_detalhados),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    fig = px.pie(
+                        values=[
+                            df_cancel['Custo_Containers'].sum(),
+                            df_cancel['Custo_Operacao'].sum(),
+                            df_cancel['Custo_Documentacao'].sum(),
+                            df_cancel['Custo_Armazenagem'].sum(),
+                            df_cancel['Custo_Inspecao'].sum()
+                        ],
+                        names=[
+                            'Contêineres',
+                            'Operação Portuária',
+                            'Documentação',
+                            'Armazenagem',
+                            'Inspeção'
+                        ],
+                        title='Distribuição dos Custos por Categoria',
+                        color_discrete_sequence=px.colors.qualitative.Set3
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Análise de impacto por tipo de navio
+                if col_tipo_navio is not None:
+                    st.subheader("Análise de Custos por Tipo de Navio")
+                    custos_por_tipo = df_cancel.groupby(col_tipo_navio)['Custo_Total'].agg(['sum', 'mean', 'count']).reset_index()
+                    custos_por_tipo.columns = ['Tipo de Navio', 'Custo Total', 'Custo Médio', 'Quantidade']
+                    custos_por_tipo = custos_por_tipo.sort_values('Custo Total', ascending=False)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write("Custos por Tipo de Navio:")
+                        st.dataframe(
+                            custos_por_tipo,
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                    
+                    with col2:
+                        fig = px.bar(
+                            custos_por_tipo,
+                            x='Tipo de Navio',
+                            y='Custo Total',
+                            title='Custos por Tipo de Navio',
+                            color='Custo Total',
+                            color_continuous_scale='Viridis'
+                        )
+                        fig.update_layout(
+                            xaxis_title="Tipo de Navio",
+                            yaxis_title="Custo Total (USD)",
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("⚠️ Coluna de contêineres não encontrada nos dados. Não é possível calcular os custos.")
 
 else:
     st.warning("⚠️ Por favor, faça o upload do arquivo Excel para começar a análise.") 
