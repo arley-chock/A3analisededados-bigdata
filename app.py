@@ -183,6 +183,24 @@ with st.sidebar:
             <p>Faça upload do arquivo Excel para começar a análise.</p>
         </div>
     """, unsafe_allow_html=True)
+    
+    # Adicionar seção de referências de custos
+    st.markdown("---")
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.10); padding: 0.7rem; border-radius: 10px;'>
+            <h3 style='margin-bottom: 0.7rem;'>💰 Referências de Custos</h3>
+            <p style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Valores baseados em tabelas 2024-25:</p>
+            <ul style='font-size: 0.85rem; padding-left: 1rem;'>
+                <li>THC: Cosco "Brazil Local Charges"</li>
+                <li>Armazenagem: Tabela Ecoporto 2024/25</li>
+                <li>Despachante: Tabela Sindaesc 2024</li>
+                <li>Scanner: Santos Brasil (reajuste 2024)</li>
+            </ul>
+            <p style='font-size: 0.8rem; margin-top: 0.5rem; color: #4CAF50;'>
+                Câmbio médio: R$ 5,10/US$ 1
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
 # Upload do arquivo
 uploaded_file = st.file_uploader("📁 Faça o upload do arquivo Excel", type=["xlsx"])
@@ -836,12 +854,12 @@ if uploaded_file is not None:
             
             # Parâmetros de custos
             CUSTOS = {
-                "TEU":               350.0,   # BRL por TEU
-                "OPERACAO_PORTO":    8000.0,  # BRL fixo por escala
-                "DOCUMENTACAO":      3500.0,  # BRL fixo por escala
-                "ARMAZENAGEM_DIA":    200.0,  # BRL por TEU/dia
-                "ARMAZENAGEM_DIAS":      5,   # dias médios de armazenagem
-                "INSPECAO":          1500.0   # BRL fixo por escala
+                "TEU":               1200.0,   # R$ / TEU (valor médio armadores Santos)
+                "OPERACAO_PORTO":    1150.0,   # R$ fixo (taxa de cancelamento terminal)
+                "DOCUMENTACAO":       950.0,   # R$ / operação (honorários despachante)
+                "ARMAZENAGEM_DIA":    575.0,   # R$ / TEU / dia (armazenagem média)
+                "ARMAZENAGEM_DIAS":      2,    # dias extras
+                "INSPECAO":            95.0    # R$ / cont. (scanner/fitossanitária)
             }
 
             def calcular_custos(df: pd.DataFrame,
@@ -854,17 +872,17 @@ if uploaded_file is not None:
                 df[coluna_teu] = pd.to_numeric(df[coluna_teu], errors="coerce").fillna(0)
 
                 # Custos principais
-                df["C_TEUS"]     = df[coluna_teu] * CUSTOS["TEU"]
-                df["C_OPER"]     = CUSTOS["OPERACAO_PORTO"]
-                df["C_DOC"]      = CUSTOS["DOCUMENTACAO"]
+                df["C_TEUS"]     = df[coluna_teu] * CUSTOS["TEU"]          # THC
+                df["C_OPER"]     = CUSTOS["OPERACAO_PORTO"]                 # cancelamento terminal
+                df["C_DOC"]      = CUSTOS["DOCUMENTACAO"]                   # despachante
 
-                # Armazenagem (opcionalmente usa a data; aqui usamos valor médio fixo)
+                # Armazenagem (2 dias)
                 df["C_ARM"]      = (
                     df[coluna_teu] * CUSTOS["ARMAZENAGEM_DIA"] * CUSTOS["ARMAZENAGEM_DIAS"]
                 )
 
                 # Inspeção
-                df["C_INSP"]     = CUSTOS["INSPECAO"]
+                df["C_INSP"]     = CUSTOS["INSPECAO"]                       # scanner/fitossanitária
 
                 # Custo total
                 colunas_custos = ["C_TEUS", "C_OPER", "C_DOC", "C_ARM", "C_INSP"]
@@ -913,15 +931,30 @@ if uploaded_file is not None:
                     df_cancel[["C_TEUS", "C_OPER", "C_DOC", "C_ARM", "C_INSP"]]
                     .sum()
                     .rename(index={
-                        "C_TEUS": "Contêineres",
-                        "C_OPER": "Operação Portuária",
-                        "C_DOC":  "Documentação",
-                        "C_ARM":  "Armazenagem",
-                        "C_INSP": "Inspeção"
+                        "C_TEUS": "THC (Terminal Handling Charge)",
+                        "C_OPER": "Taxa de Cancelamento",
+                        "C_DOC":  "Honorários de Despacho",
+                        "C_ARM":  "Armazenagem (2 dias)",
+                        "C_INSP": "Scanner/Fitossanitária"
                     })
                     .reset_index()
                     .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (BRL)"})
                 )
+
+                # Adicionar detalhes dos custos
+                st.markdown("""
+                    <div style='background: rgba(255,255,255,0.10); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;'>
+                        <h4 style='color: #4CAF50; margin-bottom: 0.7rem;'>📊 Detalhamento dos Custos</h4>
+                        <p style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Composição dos valores por item:</p>
+                        <ul style='font-size: 0.85rem; padding-left: 1rem;'>
+                            <li><strong>THC:</strong> R$ 1.200,00 por TEU (20' dry)</li>
+                            <li><strong>Taxa de Cancelamento:</strong> R$ 1.150,00 por operação</li>
+                            <li><strong>Despachante:</strong> R$ 950,00 (mínimo tabela Sindaesc)</li>
+                            <li><strong>Armazenagem:</strong> R$ 575,00/TEU/dia × 2 dias</li>
+                            <li><strong>Scanner:</strong> R$ 95,00 por contêiner</li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
 
                 col1, col2 = st.columns(2)
                 with col1:
