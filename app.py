@@ -836,12 +836,12 @@ if uploaded_file is not None:
             
             # Parâmetros de custos
             CUSTOS = {
-                "TEU":               350.0,   # USD por TEU
-                "OPERACAO_PORTO":    8000.0,  # USD fixo por escala
-                "DOCUMENTACAO":      3500.0,  # USD fixo por escala
-                "ARMAZENAGEM_DIA":    200.0,  # USD por TEU/dia
+                "TEU":               350.0,   # BRL por TEU
+                "OPERACAO_PORTO":    8000.0,  # BRL fixo por escala
+                "DOCUMENTACAO":      3500.0,  # BRL fixo por escala
+                "ARMAZENAGEM_DIA":    200.0,  # BRL por TEU/dia
                 "ARMAZENAGEM_DIAS":      5,   # dias médios de armazenagem
-                "INSPECAO":          1500.0   # USD fixo por escala
+                "INSPECAO":          1500.0   # BRL fixo por escala
             }
 
             def calcular_custos(df: pd.DataFrame,
@@ -880,10 +880,10 @@ if uploaded_file is not None:
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Custo Total Perdido",
-                            f"USD {df_cancel['CUSTO_TOTAL'].sum():,.2f}")
+                            f"R$ {df_cancel['CUSTO_TOTAL'].sum():,.2f}")
                 with col2:
                     st.metric("Custo Médio por Cancelamento",
-                            f"USD {df_cancel['CUSTO_TOTAL'].mean():,.2f}")
+                            f"R$ {df_cancel['CUSTO_TOTAL'].mean():,.2f}")
                 with col3:
                     st.metric("Total de TEUs Afetados",
                             f"{df_cancel[col_conteineres].sum():,.0f}")
@@ -920,7 +920,7 @@ if uploaded_file is not None:
                         "C_INSP": "Inspeção"
                     })
                     .reset_index()
-                    .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (USD)"})
+                    .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (BRL)"})
                 )
 
                 col1, col2 = st.columns(2)
@@ -928,7 +928,7 @@ if uploaded_file is not None:
                     st.dataframe(componentes, hide_index=True, use_container_width=True)
                 with col2:
                     st.plotly_chart(
-                        px.pie(componentes, values="Valor Total (USD)",
+                        px.pie(componentes, values="Valor Total (BRL)",
                             names="Tipo de Custo",
                             title="Distribuição dos Custos"),
                         use_container_width=True
@@ -967,7 +967,7 @@ if uploaded_file is not None:
                         )
                         fig.update_layout(
                             xaxis_title="Armador",
-                            yaxis_title="Custo Total (USD)",
+                            yaxis_title="Custo Total (BRL)",
                             showlegend=False
                         )
                         st.plotly_chart(fig, use_container_width=True)
