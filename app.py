@@ -349,34 +349,88 @@ if uploaded_file is not None:
             col_armador = 'Armador' if 'Armador' in df_cancel.columns else None
             if col_armador is not None:
                 st.subheader("🏢 Análise por Armador")
+                
+                # Limpar e preparar dados do armador
                 df_cancel[col_armador] = df_cancel[col_armador].astype(str).str.strip().str.capitalize()
+                df_cancel[col_armador] = df_cancel[col_armador].replace('', 'Não Informado')
+                df_cancel[col_armador] = df_cancel[col_armador].replace('Nan', 'Não Informado')
+                df_cancel[col_armador] = df_cancel[col_armador].replace('None', 'Não Informado')
+                
                 contagem_armadores = df_cancel[col_armador].value_counts().reset_index()
                 contagem_armadores.columns = ['Armador', 'Cancelamentos']
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.dataframe(
-                        contagem_armadores.head(10),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                
-                with col2:
-                    # Gráfico de barras com Plotly
-                    fig = px.bar(
-                        contagem_armadores.head(5),
-                        x='Armador',
-                        y='Cancelamentos',
-                        title='Top 5 Armadores com Mais Cancelamentos',
-                        color='Cancelamentos',
-                        color_continuous_scale='Viridis'
-                    )
-                    fig.update_layout(
-                        xaxis_title="Armador",
-                        yaxis_title="Quantidade de Cancelamentos",
-                        showlegend=False
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                if not contagem_armadores.empty and len(contagem_armadores) > 0:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.subheader("📊 Top 10 Armadores")
+                        st.dataframe(
+                            contagem_armadores.head(10),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                        
+                        # Métricas adicionais
+                        total_armadores = len(contagem_armadores)
+                        st.metric(
+                            "Total de Armadores",
+                            f"{total_armadores:,}",
+                            delta=f"{(total_armadores/len(df_cancel)*100):.1f}% do total"
+                        )
+
+                    with col2:
+                        if len(contagem_armadores) >= 5:
+                            fig = px.bar(
+                                contagem_armadores.head(5),
+                                x='Armador',
+                                y='Cancelamentos',
+                                title='Top 5 Armadores com Mais Cancelamentos',
+                                color='Cancelamentos',
+                                color_continuous_scale='Viridis'
+                            )
+                            fig.update_layout(
+                                xaxis_title="Armador",
+                                yaxis_title="Quantidade de Cancelamentos",
+                                showlegend=False
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            fig = px.bar(
+                                contagem_armadores,
+                                x='Armador',
+                                y='Cancelamentos',
+                                title='Armadores com Cancelamentos',
+                                color='Cancelamentos',
+                                color_continuous_scale='Viridis'
+                            )
+                            fig.update_layout(
+                                xaxis_title="Armador",
+                                yaxis_title="Quantidade de Cancelamentos",
+                                showlegend=False
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Análise adicional
+                    st.subheader("📈 Análise Detalhada")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        # Estatísticas básicas
+                        st.write("Estatísticas dos Cancelamentos por Armador:")
+                        st.write(contagem_armadores['Cancelamentos'].describe())
+                    
+                    with col2:
+                        # Gráfico de pizza para distribuição
+                        fig = px.pie(
+                            contagem_armadores.head(10),
+                            values='Cancelamentos',
+                            names='Armador',
+                            title='Distribuição dos 10 Maiores Armadores',
+                            color_discrete_sequence=px.colors.qualitative.Set3
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("ℹ️ Nenhum dado de armador disponível para análise.")
+            else:
+                st.warning("⚠️ Coluna 'Armador' não encontrada nos dados.")
 
 else:
     st.warning("⚠️ Por favor, faça o upload do arquivo Excel para começar a análise.") 
