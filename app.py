@@ -31,37 +31,39 @@ st.markdown("""
     <style>
     html, body, [class*="css"] {
         font-family: 'Inter', Arial, sans-serif !important;
+        background: #181a1b !important;
+        color: #eaeaea !important;
     }
     .main {
-        padding: 2.5rem 1.5rem 1.5rem 1.5rem;
-        background: var(--background-color, #181a1b);
+        padding: 2rem 1rem 1rem 1rem;
+        background: #181a1b;
     }
     .stMetric, .stDataFrame, .stMarkdown, .js-plotly-plot, .stFileUploader, .stContainer {
-        background: rgba(255,255,255,0.07);
-        border-radius: 18px;
-        box-shadow: none;
-        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
-        margin-bottom: 1.5rem;
+        background: rgba(255,255,255,0.06);
+        border-radius: 16px;
+        box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.2rem;
         border: 1px solid rgba(200,200,200,0.08);
     }
     .stTabs [data-baseweb="tab-list"] {
-        gap: 1.5rem;
+        gap: 1rem;
         background: transparent;
         padding: 0.5rem 0;
         margin-bottom: 0.5rem;
     }
     .stTabs [data-baseweb="tab"] {
-        background: rgba(240,242,246,0.13);
+        background: rgba(76,175,80,0.10);
         border-radius: 10px 10px 0 0;
-        color: var(--text-color, #eaeaea);
+        color: #eaeaea;
         font-weight: 500;
         font-size: 1.1rem;
         transition: background 0.2s, color 0.2s;
-        padding: 0.7rem 1.5rem;
+        padding: 0.6rem 1.2rem;
         margin-right: 0.2rem;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(76,175,80,0.13);
+        background: rgba(76,175,80,0.18);
         color: #4CAF50;
     }
     .stTabs [aria-selected="true"] {
@@ -69,22 +71,22 @@ st.markdown("""
         color: #fff;
     }
     h1, h2, h3, h4, h5, h6 {
-        color: var(--text-color, #fff);
+        color: #fff;
         font-family: 'Inter', Arial, sans-serif;
         font-weight: 700;
         margin-bottom: 0.7rem;
         letter-spacing: -1px;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 1.2rem; }
-    h2 { font-size: 2rem; margin-bottom: 1rem; }
-    h3 { font-size: 1.4rem; margin-bottom: 0.7rem; }
+    h1 { font-size: 2.2rem; margin-bottom: 1rem; }
+    h2 { font-size: 1.5rem; margin-bottom: 0.7rem; }
+    h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
     .stSubheader {
         color: #4CAF50;
         font-weight: 600;
         border-bottom: 2px solid #4CAF50;
-        padding-bottom: 0.3rem;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
+        padding-bottom: 0.2rem;
+        margin-bottom: 0.8rem;
+        font-size: 1.1rem;
     }
     .stButton button {
         background: #4CAF50;
@@ -99,37 +101,31 @@ st.markdown("""
     .stButton button:hover {
         background: #388e3c;
     }
-    /* Sidebar adaptativo */
     section[data-testid="stSidebar"] {
         background: linear-gradient(135deg, #23272f 70%, #4CAF50 100%) !important;
         color: #fff !important;
-        padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
+        padding: 0.5rem !important;
     }
     section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] li {
         color: #fff !important;
         font-size: 1.05rem;
     }
-    section[data-testid="stSidebar"] ul {
-        margin-bottom: 0.5rem;
-    }
-    /* Cards principais */
     .dashboard-card {
         background: rgba(255,255,255,0.10);
-        border-radius: 18px;
+        border-radius: 16px;
         box-shadow: none;
-        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
-        margin-bottom: 1.5rem;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.2rem;
         border: 1px solid rgba(200,200,200,0.08);
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
     }
-    /* Responsividade */
     @media (max-width: 900px) {
         .main { padding: 0.5rem; }
         .stContainer, .stMetric, .stDataFrame, .stMarkdown, .dashboard-card { padding: 0.5rem; }
-        h1 { font-size: 1.5rem; }
-        h2 { font-size: 1.2rem; }
+        h1 { font-size: 1.3rem; }
+        h2 { font-size: 1.1rem; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -158,6 +154,13 @@ st.markdown("""
         </div>
     </div>
 """, unsafe_allow_html=True)
+
+# Após o título principal, exibir o período de coleta dos dados
+if 'df_cancel' in locals() and not df_cancel.empty and 'col_data' in locals() and col_data:
+    data_min = df_cancel[col_data].min()
+    data_max = df_cancel[col_data].max()
+    if pd.notnull(data_min) and pd.notnull(data_max):
+        st.markdown(f"<div class='dashboard-card' style='text-align:center; margin-bottom:1.2rem;'><b>Período de coleta dos dados analisados:</b><br> <span style='color:#4CAF50;'>{data_min.strftime('%d/%m/%Y')}</span> até <span style='color:#4CAF50;'>{data_max.strftime('%d/%m/%Y')}</span></div>", unsafe_allow_html=True)
 
 # Sidebar com estilo melhorado e adaptativo
 with st.sidebar:
