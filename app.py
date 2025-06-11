@@ -29,59 +29,201 @@ st.set_page_config(
 # Estilo CSS personalizado
 st.markdown("""
     <style>
+    /* Estilos gerais */
     .main {
         padding: 2rem;
+        background-color: #f8f9fa;
     }
+    
+    /* Estilo dos cards */
+    .stMetric {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    /* Estilo das abas */
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
+        background-color: #f0f2f6;
+        padding: 0.5rem;
+        border-radius: 10px;
     }
+    
     .stTabs [data-baseweb="tab"] {
         height: 4rem;
         white-space: pre-wrap;
-        background-color: #f0f2f6;
-        border-radius: 4px 4px 0 0;
+        background-color: white;
+        border-radius: 8px;
         gap: 1rem;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding: 1rem;
+        margin: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
     }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+    }
+    
     .stTabs [aria-selected="true"] {
         background-color: #4CAF50;
         color: white;
+        box-shadow: 0 4px 8px rgba(76,175,80,0.2);
+    }
+    
+    /* Estilo dos títulos */
+    h1, h2, h3 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Estilo dos gráficos */
+    .js-plotly-plot {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilo das tabelas */
+    .stDataFrame {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilo do sidebar */
+    .css-1d391kg {
+        background-color: #2c3e50;
+        color: white;
+    }
+    
+    /* Estilo dos avisos */
+    .stAlert {
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    /* Estilo do upload */
+    .stFileUploader {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilo dos botões */
+    .stButton button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton button:hover {
+        background-color: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(76,175,80,0.2);
+    }
+    
+    /* Estilo dos containers */
+    .stContainer {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilo dos subheaders */
+    .stSubheader {
+        color: #2c3e50;
+        font-weight: 500;
+        margin: 1.5rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #4CAF50;
+    }
+    
+    /* Estilo dos markdowns */
+    .stMarkdown {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Animações */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .stMarkdown, .stDataFrame, .js-plotly-plot {
+        animation: fadeIn 0.5s ease-out;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Título e descrição
-st.title("🚢 Análise de Levantamentos de Cancelamentos de Navios")
+# Título e descrição com estilo melhorado
 st.markdown("""
-    <div style='text-align: center; padding: 1rem; background-color: #f0f2f6; border-radius: 10px; margin-bottom: 2rem;'>
-        <h3>Dashboard Interativo de Análise de Cancelamentos</h3>
-        <p>Este aplicativo fornece insights detalhados sobre cancelamentos de navios, incluindo:</p>
-        <ul style='list-style-type: none;'>
-            <li>📊 Análise de tendências temporais</li>
-            <li>🚢 Identificação de navios mais afetados</li>
-            <li>🌍 Análise de rotas e portos</li>
-            <li>📈 Métricas e estatísticas detalhadas</li>
-        </ul>
+    <div style='text-align: center; padding: 2rem; background-color: white; border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);'>
+        <h1 style='color: #2c3e50; margin-bottom: 1rem;'>🚢 Análise de Levantamentos de Cancelamentos de Navios</h1>
+        <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 10px;'>
+            <h3 style='color: #4CAF50; margin-bottom: 1rem;'>Dashboard Interativo de Análise de Cancelamentos</h3>
+            <p style='color: #666; margin-bottom: 1rem;'>Este aplicativo fornece insights detalhados sobre cancelamentos de navios, incluindo:</p>
+            <div style='display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;'>
+                <div style='background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+                    <p style='font-size: 1.2rem; margin: 0;'>📊 Análise de tendências temporais</p>
+                </div>
+                <div style='background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+                    <p style='font-size: 1.2rem; margin: 0;'>🚢 Identificação de navios mais afetados</p>
+                </div>
+                <div style='background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+                    <p style='font-size: 1.2rem; margin: 0;'>🌍 Análise de rotas e portos</p>
+                </div>
+                <div style='background-color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+                    <p style='font-size: 1.2rem; margin: 0;'>📈 Métricas e estatísticas detalhadas</p>
+                </div>
+            </div>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar com informações do projeto
+# Sidebar com estilo melhorado
 with st.sidebar:
-    st.image("https://img.icons8.com/color/96/000000/cruise-ship.png", width=100)
-    st.markdown("### 📋 Sobre o Projeto")
     st.markdown("""
-        Este dashboard foi desenvolvido como parte de um projeto acadêmico para análise de dados de cancelamentos de navios.
-        
-        **Integrantes:**
-        - Arley do Nascimento Vinagre
-        - Vinicius Santana
-        - Tauan Santos Santana
-    """)
+        <div style='text-align: center; margin-bottom: 2rem;'>
+            <img src='https://img.icons8.com/color/96/000000/cruise-ship.png' style='width: 100px; margin-bottom: 1rem;'>
+            <h3 style='color: white; margin-bottom: 1rem;'>📋 Sobre o Projeto</h3>
+            <div style='background-color: rgba(255,255,255,0.1); padding: 1rem; border-radius: 10px;'>
+                <p style='color: white; margin-bottom: 1rem;'>Este dashboard foi desenvolvido como parte de um projeto acadêmico para análise de dados de cancelamentos de navios.</p>
+                <h4 style='color: white; margin-bottom: 0.5rem;'>Integrantes:</h4>
+                <ul style='color: white; list-style-type: none; padding: 0;'>
+                    <li style='margin-bottom: 0.5rem;'>👤 Arley do Nascimento Vinagre</li>
+                    <li style='margin-bottom: 0.5rem;'>👤 Vinicius Santana</li>
+                    <li style='margin-bottom: 0.5rem;'>👤 Tauan Santos Santana</li>
+                </ul>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("---")
-    st.markdown("### 📊 Filtros")
-    st.markdown("Faça upload do arquivo Excel para começar a análise.")
+    st.markdown("""
+        <div style='background-color: rgba(255,255,255,0.1); padding: 1rem; border-radius: 10px;'>
+            <h3 style='color: white; margin-bottom: 1rem;'>📊 Filtros</h3>
+            <p style='color: white;'>Faça upload do arquivo Excel para começar a análise.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 # Upload do arquivo
 uploaded_file = st.file_uploader("📁 Faça o upload do arquivo Excel", type=["xlsx"])
@@ -126,7 +268,7 @@ if uploaded_file is not None:
         
         # Definir max_mes antes de usar
         max_mes = None
-        if len(contagem_mensal) > 0:
+        if not contagem_mensal.empty and len(contagem_mensal) > 0:
             max_mes = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
         
         resumo_texto = f"""
@@ -142,12 +284,13 @@ if uploaded_file is not None:
         st.markdown(resumo_texto)
 
     # Criar abas para diferentes análises
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Visão Geral", 
         "🚢 Análise de Navios", 
         "📅 Análise Temporal",
         "🌍 Análise de Rotas",
-        "📊 Análises Adicionais"
+        "📊 Análises Adicionais",
+        "🔍 Análises Avançadas"
     ])
 
     with tab1:
@@ -431,6 +574,302 @@ if uploaded_file is not None:
                     st.info("ℹ️ Nenhum dado de armador disponível para análise.")
             else:
                 st.warning("⚠️ Coluna 'Armador' não encontrada nos dados.")
+
+    with tab6:
+        st.header("🔍 Análises Avançadas")
+        
+        # Criar subabas para análises avançadas
+        sub_tab1, sub_tab2, sub_tab3, sub_tab4, sub_tab5, sub_tab6, sub_tab7 = st.tabs([
+            "⏱️ Tempo de Permanência",
+            "🔄 Análise por Serviço",
+            "🌍 Análise por País",
+            "📏 Dimensões dos Navios",
+            "📊 Correlações",
+            "⚓ Análise por Berço",
+            "📅 Cancelamentos por Dia"
+        ])
+        
+        with sub_tab1:
+            st.subheader("⏱️ Tempo de Permanência no Porto")
+            
+            # Verificar colunas necessárias
+            col_eta = 'Estimativa Chegada ETA' if 'Estimativa Chegada ETA' in df_cancel.columns else None
+            col_etd = 'Estimativa Saída ETD' if 'Estimativa Saída ETD' in df_cancel.columns else None
+            col_inicio = 'Início Operação' if 'Início Operação' in df_cancel.columns else None
+            col_fim = 'Fim Operação' if 'Fim Operação' in df_cancel.columns else None
+            
+            if (col_eta and col_etd) or (col_inicio and col_fim):
+                # Converter datas
+                if col_eta and col_etd:
+                    df_cancel[col_eta] = pd.to_datetime(df_cancel[col_eta], errors='coerce')
+                    df_cancel[col_etd] = pd.to_datetime(df_cancel[col_etd], errors='coerce')
+                    df_cancel['Tempo_Permanencia'] = (df_cancel[col_etd] - df_cancel[col_eta]).dt.total_seconds() / 3600  # em horas
+                else:
+                    df_cancel[col_inicio] = pd.to_datetime(df_cancel[col_inicio], errors='coerce')
+                    df_cancel[col_fim] = pd.to_datetime(df_cancel[col_fim], errors='coerce')
+                    df_cancel['Tempo_Permanencia'] = (df_cancel[col_fim] - df_cancel[col_inicio]).dt.total_seconds() / 3600  # em horas
+                
+                # Remover valores inválidos
+                df_tempo = df_cancel.dropna(subset=['Tempo_Permanencia'])
+                df_tempo = df_tempo[df_tempo['Tempo_Permanencia'] > 0]
+                
+                if not df_tempo.empty:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        # Estatísticas básicas
+                        st.write("Estatísticas do Tempo de Permanência (horas):")
+                        st.write(df_tempo['Tempo_Permanencia'].describe())
+                    
+                    with col2:
+                        # Boxplot
+                        fig = px.box(
+                            df_tempo,
+                            y='Tempo_Permanencia',
+                            title='Distribuição do Tempo de Permanência',
+                            color_discrete_sequence=['#4CAF50']
+                        )
+                        fig.update_layout(yaxis_title="Tempo (horas)")
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Análise por armador
+                    if col_armador is not None:
+                        st.subheader("Tempo de Permanência por Armador")
+                        tempo_por_armador = df_tempo.groupby(col_armador)['Tempo_Permanencia'].mean().reset_index()
+                        tempo_por_armador = tempo_por_armador.sort_values('Tempo_Permanencia', ascending=False)
+                        
+                        fig = px.bar(
+                            tempo_por_armador.head(10),
+                            x=col_armador,
+                            y='Tempo_Permanencia',
+                            title='Top 10 Armadores por Tempo Médio de Permanência',
+                            color='Tempo_Permanencia',
+                            color_continuous_scale='Viridis'
+                        )
+                        fig.update_layout(
+                            xaxis_title="Armador",
+                            yaxis_title="Tempo Médio (horas)",
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("⚠️ Não há dados válidos para análise de tempo de permanência.")
+            else:
+                st.warning("⚠️ Colunas necessárias para análise de tempo de permanência não encontradas.")
+        
+        with sub_tab2:
+            st.subheader("🔄 Análise por Serviço")
+            
+            col_servico = 'Serviço' if 'Serviço' in df_cancel.columns else None
+            if col_servico is not None:
+                contagem_servicos = df_cancel[col_servico].value_counts().reset_index()
+                contagem_servicos.columns = ['Serviço', 'Cancelamentos']
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("Top 10 Serviços com Mais Cancelamentos:")
+                    st.dataframe(
+                        contagem_servicos.head(10),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    # Gráfico de pizza
+                    fig = px.pie(
+                        contagem_servicos.head(10),
+                        values='Cancelamentos',
+                        names='Serviço',
+                        title='Distribuição dos 10 Maiores Serviços',
+                        color_discrete_sequence=px.colors.qualitative.Set3
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("⚠️ Coluna 'Serviço' não encontrada nos dados.")
+        
+        with sub_tab3:
+            st.subheader("🌍 Análise por País")
+            
+            col_pais = 'País' if 'País' in df_cancel.columns else None
+            if col_pais is not None:
+                contagem_paises = df_cancel[col_pais].value_counts().reset_index()
+                contagem_paises.columns = ['País', 'Cancelamentos']
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("Top 10 Países com Mais Cancelamentos:")
+                    st.dataframe(
+                        contagem_paises.head(10),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    # Gráfico de barras
+                    fig = px.bar(
+                        contagem_paises.head(10),
+                        x='País',
+                        y='Cancelamentos',
+                        title='Top 10 Países com Mais Cancelamentos',
+                        color='Cancelamentos',
+                        color_continuous_scale='Viridis'
+                    )
+                    fig.update_layout(
+                        xaxis_title="País",
+                        yaxis_title="Quantidade de Cancelamentos",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("⚠️ Coluna 'País' não encontrada nos dados.")
+        
+        with sub_tab4:
+            st.subheader("📏 Análise de Dimensões dos Navios")
+            
+            col_comprimento = 'Comprimento' if 'Comprimento' in df_cancel.columns else None
+            col_largura = 'Largura' if 'Largura' in df_cancel.columns else None
+            
+            if col_comprimento and col_largura:
+                # Converter para numérico
+                df_cancel[col_comprimento] = pd.to_numeric(df_cancel[col_comprimento], errors='coerce')
+                df_cancel[col_largura] = pd.to_numeric(df_cancel[col_largura], errors='coerce')
+                
+                # Remover valores inválidos
+                df_dimensoes = df_cancel.dropna(subset=[col_comprimento, col_largura])
+                
+                if not df_dimensoes.empty:
+                    # Gráfico de dispersão
+                    fig = px.scatter(
+                        df_dimensoes,
+                        x=col_comprimento,
+                        y=col_largura,
+                        title='Relação entre Comprimento e Largura dos Navios',
+                        color=col_status if col_status else None,
+                        color_discrete_sequence=px.colors.qualitative.Set3
+                    )
+                    fig.update_layout(
+                        xaxis_title="Comprimento",
+                        yaxis_title="Largura"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Estatísticas
+                    st.write("Estatísticas das Dimensões:")
+                    st.write(df_dimensoes[[col_comprimento, col_largura]].describe())
+                else:
+                    st.warning("⚠️ Não há dados válidos para análise de dimensões.")
+            else:
+                st.warning("⚠️ Colunas de dimensões não encontradas nos dados.")
+        
+        with sub_tab5:
+            st.subheader("📊 Correlação entre Variáveis Operacionais")
+            
+            # Selecionar colunas numéricas
+            colunas_numericas = df_cancel.select_dtypes(include=[np.number]).columns.tolist()
+            
+            if len(colunas_numericas) > 1:
+                # Calcular correlação
+                corr_matrix = df_cancel[colunas_numericas].corr()
+                
+                # Heatmap
+                fig = px.imshow(
+                    corr_matrix,
+                    title='Matriz de Correlação',
+                    color_continuous_scale='RdBu',
+                    aspect='auto'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Exibir valores de correlação
+                st.write("Valores de Correlação:")
+                st.dataframe(corr_matrix, use_container_width=True)
+            else:
+                st.warning("⚠️ Não há colunas numéricas suficientes para análise de correlação.")
+        
+        with sub_tab6:
+            st.subheader("⚓ Análise por Berço")
+            
+            col_berco = 'Berço' if 'Berço' in df_cancel.columns else None
+            if col_berco is not None:
+                contagem_bercos = df_cancel[col_berco].value_counts().reset_index()
+                contagem_bercos.columns = ['Berço', 'Cancelamentos']
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("Top 10 Berços com Mais Cancelamentos:")
+                    st.dataframe(
+                        contagem_bercos.head(10),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    # Gráfico de barras horizontais
+                    fig = px.bar(
+                        contagem_bercos.head(10),
+                        y='Berço',
+                        x='Cancelamentos',
+                        title='Top 10 Berços com Mais Cancelamentos',
+                        color='Cancelamentos',
+                        color_continuous_scale='Viridis',
+                        orientation='h'
+                    )
+                    fig.update_layout(
+                        yaxis_title="Berço",
+                        xaxis_title="Quantidade de Cancelamentos",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("⚠️ Coluna 'Berço' não encontrada nos dados.")
+        
+        with sub_tab7:
+            st.subheader("📅 Cancelamentos por Dia da Semana")
+            
+            if col_data is not None:
+                # Converter data e extrair dia da semana
+                df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], errors='coerce')
+                df_cancel['Dia_Semana'] = df_cancel[col_data].dt.day_name()
+                
+                # Contagem por dia da semana
+                contagem_dias = df_cancel['Dia_Semana'].value_counts().reset_index()
+                contagem_dias.columns = ['Dia da Semana', 'Cancelamentos']
+                
+                # Ordenar dias da semana
+                ordem_dias = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                contagem_dias['Dia da Semana'] = pd.Categorical(
+                    contagem_dias['Dia da Semana'],
+                    categories=ordem_dias,
+                    ordered=True
+                )
+                contagem_dias = contagem_dias.sort_values('Dia da Semana')
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("Cancelamentos por Dia da Semana:")
+                    st.dataframe(
+                        contagem_dias,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    # Gráfico de barras
+                    fig = px.bar(
+                        contagem_dias,
+                        x='Dia da Semana',
+                        y='Cancelamentos',
+                        title='Cancelamentos por Dia da Semana',
+                        color='Cancelamentos',
+                        color_continuous_scale='Viridis'
+                    )
+                    fig.update_layout(
+                        xaxis_title="Dia da Semana",
+                        yaxis_title="Quantidade de Cancelamentos",
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("⚠️ Coluna de data não encontrada nos dados.")
 
 else:
     st.warning("⚠️ Por favor, faça o upload do arquivo Excel para começar a análise.") 
