@@ -360,11 +360,23 @@ if uploaded_file is not None:
     # Resumo final na sidebar
     with st.sidebar:
         st.markdown("### 📊 Resumo dos Resultados")
-        st.markdown(f"""
+        
+        # Definir max_mes antes de usar
+        max_mes = None
+        if len(contagem_mensal) > 0:
+            max_mes = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
+        
+        resumo_texto = f"""
             - **Total de cancelamentos:** {len(df_cancel):,}
             - **Navio mais cancelado:** {contagem_navios.iloc[0]['Navio']} ({contagem_navios.iloc[0]['QuantidadeCancelamentos']} vezes)
+        """
+        
+        if max_mes is not None:
+            resumo_texto += f"""
             - **Mês com mais cancelamentos:** {max_mes['Y-M'].strftime('%Y-%m')} ({int(max_mes['Cancelamentos'])} cancelamentos)
-        """)
+            """
+        
+        st.markdown(resumo_texto)
 
 else:
     st.warning("⚠️ Por favor, faça o upload do arquivo Excel para começar a análise.") 
