@@ -155,13 +155,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Após o título principal, exibir o período de coleta dos dados
-if 'df_cancel' in locals() and not df_cancel.empty and 'col_data' in locals() and col_data:
-    data_min = df_cancel[col_data].min()
-    data_max = df_cancel[col_data].max()
-    if pd.notnull(data_min) and pd.notnull(data_max):
-        st.markdown(f"<div class='dashboard-card' style='text-align:center; margin-bottom:1.2rem;'><b>Período de coleta dos dados analisados:</b><br> <span style='color:#4CAF50;'>{data_min.strftime('%d/%m/%Y')}</span> até <span style='color:#4CAF50;'>{data_max.strftime('%d/%m/%Y')}</span></div>", unsafe_allow_html=True)
-
 # Sidebar com estilo melhorado e adaptativo
 with st.sidebar:
     st.markdown("""
@@ -186,9 +179,67 @@ with st.sidebar:
             <p>Faça upload do arquivo Excel para começar a análise.</p>
         </div>
     """, unsafe_allow_html=True)
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.10); padding: 0.7rem; border-radius: 10px;'>
+            <h3 style='margin-bottom: 0.7rem;'>💰 Análise de Custos e Prejuízos</h3>
+            <div style='margin-bottom: 1rem;'>
+                <h4 style='margin-bottom: 0.5rem;'>Custos de Operação por Navio Cancelado</h4>
+                <p style='font-size: 0.9rem;'>Cálculo baseado em:</p>
+                <ul style='list-style-type: none; padding: 0; margin: 0;'>
+                    <li style='margin-bottom: 0.3rem;'>• Combustível: R$ 150.000/dia</li>
+                    <li style='margin-bottom: 0.3rem;'>• Tripulação: R$ 50.000/dia</li>
+                    <li style='margin-bottom: 0.3rem;'>• Manutenção: R$ 30.000/dia</li>
+                    <li style='margin-bottom: 0.3rem;'>• Portos e Taxas: R$ 70.000/dia</li>
+                </ul>
+            </div>
+            <div style='margin-bottom: 1rem;'>
+                <h4 style='margin-bottom: 0.5rem;'>Prejuízo Total Estimado</h4>
+                <p style='font-size: 0.9rem;'>Baseado no número de dias de cancelamento e custos operacionais</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 # Upload do arquivo
 uploaded_file = st.file_uploader("📁 Faça o upload do arquivo Excel", type=["xlsx"])
+
+def calcular_custos_operacao(dias_cancelamento):
+    """
+    Calcula os custos de operação baseado no número de dias de cancelamento
+    """
+    custo_diario = {
+        'combustivel': 150000,
+        'tripulacao': 50000,
+        'manutencao': 30000,
+        'portos_taxas': 70000
+    }
+    
+    custo_total_diario = sum(custo_diario.values())
+    custo_total = custo_total_diario * dias_cancelamento
+    
+    return {
+        'custo_diario': custo_diario,
+        'custo_total_diario': custo_total_diario,
+        'custo_total': custo_total
+    }
+
+def calcular_prejuizo_total(df_cancelamentos):
+    """
+    Calcula o prejuízo total baseado nos cancelamentos
+    """
+    if df_cancelamentos.empty:
+        return 0
+    
+    # Calcula o número total de dias de cancelamento
+    dias_cancelamento = df_cancelamentos['dias_cancelamento'].sum()
+    
+    # Calcula os custos
+    custos = calcular_custos_operacao(dias_cancelamento)
+    
+    return {
+        'dias_cancelamento': dias_cancelamento,
+        'custo_total': custos['custo_total'],
+        'custo_por_dia': custos['custo_total_diario']
+    }
 
 if uploaded_file is not None:
     # Carregar dados
@@ -209,6 +260,16 @@ if uploaded_file is not None:
     mask_cancel = df[col_status].isin(valores_cancelados)
     df_cancel = df.loc[mask_cancel].copy()
 
+    # Após o título principal, exibir o período de coleta dos dados
+    if col_data and not df_cancel.empty:
+        data_min = df_cancel[col_data].min()
+        data_max = df_cancel[col_data].max()
+        if pd.notnull(data_min) and pd.notnull(data_max):
+            st.markdown(
+                f"<div class='dashboard-card' style='text-align:center; margin-bottom:1.2rem;'><b>Período de coleta dos dados analisados:</b><br> <span style='color:#4CAF50;'>{data_min.strftime('%d/%m/%Y')}</span> até <span style='color:#4CAF50;'>{data_max.strftime('%d/%m/%Y')}</span></div>",
+                unsafe_allow_html=True
+            )
+
     # Preparar dados para o resumo
     contagem_navios = df_cancel[col_navio].value_counts().reset_index()
     contagem_navios.columns = ['Navio', 'QuantidadeCancelamentos']
@@ -223,6 +284,36 @@ if uploaded_file is not None:
     contagem_mensal = df_cancel.groupby('Y-M').size().reset_index(name='Cancelamentos')
     contagem_mensal['Y-M'] = pd.to_datetime(contagem_mensal['Y-M'], format='%Y-%m')
     contagem_mensal = contagem_mensal.sort_values('Y-M')
+
+    # Processar dados
+    df = processar_dados(uploaded_file)
+    
+    # Calcular prejuízos
+    prejuizos = calcular_prejuizo_total(df)
+    
+    # Exibir métricas de prejuízo
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            "Dias de Cancelamento",
+            f"{prejuizos['dias_cancelamento']:,.0f}",
+            delta=None
+        )
+    
+    with col2:
+        st.metric(
+            "Custo por Dia",
+            f"R$ {prejuizos['custo_por_dia']:,.2f}",
+            delta=None
+        )
+    
+    with col3:
+        st.metric(
+            "Prejuízo Total",
+            f"R$ {prejuizos['custo_total']:,.2f}",
+            delta=None
+        )
 
     # Resumo final na sidebar
     with st.sidebar:
