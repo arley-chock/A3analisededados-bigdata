@@ -33,48 +33,58 @@ st.markdown("""
         font-family: 'Inter', Arial, sans-serif !important;
     }
     .main {
-        padding: 2rem;
-        background: var(--background-color, #f8f9fa);
+        padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+        background: var(--background-color, #181a1b);
     }
     .stMetric, .stDataFrame, .stMarkdown, .js-plotly-plot, .stFileUploader, .stContainer {
-        background: rgba(255,255,255,0.85);
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        padding: 1rem;
-        margin-bottom: 1.2rem;
+        background: rgba(255,255,255,0.07);
+        border-radius: 18px;
+        box-shadow: none;
+        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(200,200,200,0.08);
     }
     .stTabs [data-baseweb="tab-list"] {
-        gap: 1.2rem;
+        gap: 1.5rem;
         background: transparent;
         padding: 0.5rem 0;
+        margin-bottom: 0.5rem;
     }
     .stTabs [data-baseweb="tab"] {
-        background: rgba(240,242,246,0.7);
-        border-radius: 8px 8px 0 0;
-        color: var(--text-color, #222);
+        background: rgba(240,242,246,0.13);
+        border-radius: 10px 10px 0 0;
+        color: var(--text-color, #eaeaea);
         font-weight: 500;
+        font-size: 1.1rem;
         transition: background 0.2s, color 0.2s;
+        padding: 0.7rem 1.5rem;
+        margin-right: 0.2rem;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(76,175,80,0.08);
-        color: #388e3c;
+        background: rgba(76,175,80,0.13);
+        color: #4CAF50;
     }
     .stTabs [aria-selected="true"] {
         background: #4CAF50;
         color: #fff;
     }
     h1, h2, h3, h4, h5, h6 {
-        color: var(--text-color, #222);
+        color: var(--text-color, #fff);
         font-family: 'Inter', Arial, sans-serif;
         font-weight: 700;
-        margin-bottom: 1rem;
+        margin-bottom: 0.7rem;
+        letter-spacing: -1px;
     }
+    h1 { font-size: 2.5rem; margin-bottom: 1.2rem; }
+    h2 { font-size: 2rem; margin-bottom: 1rem; }
+    h3 { font-size: 1.4rem; margin-bottom: 0.7rem; }
     .stSubheader {
-        color: #388e3c;
+        color: #4CAF50;
         font-weight: 600;
         border-bottom: 2px solid #4CAF50;
         padding-bottom: 0.3rem;
         margin-bottom: 1rem;
+        font-size: 1.2rem;
     }
     .stButton button {
         background: #4CAF50;
@@ -83,45 +93,66 @@ st.markdown("""
         border: none;
         font-weight: 600;
         transition: background 0.2s;
+        font-size: 1rem;
+        padding: 0.5rem 1.2rem;
     }
     .stButton button:hover {
         background: #388e3c;
     }
     /* Sidebar adaptativo */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #23272f 60%, #4CAF50 100%) !important;
+        background: linear-gradient(135deg, #23272f 70%, #4CAF50 100%) !important;
         color: #fff !important;
+        padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
     }
     section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] li {
         color: #fff !important;
+        font-size: 1.05rem;
+    }
+    section[data-testid="stSidebar"] ul {
+        margin-bottom: 0.5rem;
+    }
+    /* Cards principais */
+    .dashboard-card {
+        background: rgba(255,255,255,0.10);
+        border-radius: 18px;
+        box-shadow: none;
+        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(200,200,200,0.08);
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
     }
     /* Responsividade */
     @media (max-width: 900px) {
         .main { padding: 0.5rem; }
-        .stContainer, .stMetric, .stDataFrame, .stMarkdown { padding: 0.5rem; }
+        .stContainer, .stMetric, .stDataFrame, .stMarkdown, .dashboard-card { padding: 0.5rem; }
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.2rem; }
     }
     </style>
 """, unsafe_allow_html=True)
 
 # Título e descrição com estilo melhorado e adaptativo
 st.markdown("""
-    <div style='text-align: center; padding: 2rem 1rem; background: rgba(255,255,255,0.85); border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 4px 8px rgba(0,0,0,0.08);'>
-        <h1 style='color: #222; margin-bottom: 1rem; font-family: Inter, Arial, sans-serif;'>🚢 Análise de Levantamentos de Cancelamentos de Navios</h1>
-        <div style='background: rgba(240,242,246,0.7); padding: 1.5rem; border-radius: 10px;'>
-            <h3 style='color: #4CAF50; margin-bottom: 1rem;'>Dashboard Interativo de Análise de Cancelamentos</h3>
-            <p style='color: #444; margin-bottom: 1rem;'>Este aplicativo fornece insights detalhados sobre cancelamentos de navios, incluindo:</p>
+    <div class='dashboard-card' style='text-align: center;'>
+        <h1 style='margin-bottom: 0.5rem;'>🚢 Análise de Levantamentos de Cancelamentos de Navios</h1>
+        <div style='background: rgba(240,242,246,0.13); padding: 1.2rem; border-radius: 12px; margin-bottom: 0.5rem;'>
+            <h2 style='color: #4CAF50; margin-bottom: 0.7rem;'>Dashboard Interativo de Análise de Cancelamentos</h2>
+            <p style='color: #e0e0e0; margin-bottom: 1.2rem;'>Este aplicativo fornece insights detalhados sobre cancelamentos de navios, incluindo:</p>
             <div style='display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap;'>
-                <div style='background: #fff; padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);'>
-                    <span style='font-size: 1.1rem;'>📊 Análise de tendências temporais</span>
+                <div style='background: rgba(255,255,255,0.10); padding: 0.7rem 1.1rem; border-radius: 8px;'>
+                    <span style='font-size: 1.05rem;'>📊 Análise de tendências temporais</span>
                 </div>
-                <div style='background: #fff; padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);'>
-                    <span style='font-size: 1.1rem;'>🚢 Identificação de navios mais afetados</span>
+                <div style='background: rgba(255,255,255,0.10); padding: 0.7rem 1.1rem; border-radius: 8px;'>
+                    <span style='font-size: 1.05rem;'>🚢 Identificação de navios mais afetados</span>
                 </div>
-                <div style='background: #fff; padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);'>
-                    <span style='font-size: 1.1rem;'>🌍 Análise de rotas e portos</span>
+                <div style='background: rgba(255,255,255,0.10); padding: 0.7rem 1.1rem; border-radius: 8px;'>
+                    <span style='font-size: 1.05rem;'>🌍 Análise de rotas e portos</span>
                 </div>
-                <div style='background: #fff; padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);'>
-                    <span style='font-size: 1.1rem;'>📈 Métricas e estatísticas detalhadas</span>
+                <div style='background: rgba(255,255,255,0.10); padding: 0.7rem 1.1rem; border-radius: 8px;'>
+                    <span style='font-size: 1.05rem;'>📈 Métricas e estatísticas detalhadas</span>
                 </div>
             </div>
         </div>
@@ -131,24 +162,24 @@ st.markdown("""
 # Sidebar com estilo melhorado e adaptativo
 with st.sidebar:
     st.markdown("""
-        <div style='text-align: center; margin-bottom: 2rem;'>
-            <img src='https://img.icons8.com/color/96/000000/cruise-ship.png' style='width: 100px; margin-bottom: 1rem;'>
-            <h3 style='margin-bottom: 1rem;'>📋 Sobre o Projeto</h3>
-            <div style='background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 10px;'>
-                <p style='margin-bottom: 1rem;'>Este dashboard foi desenvolvido como parte de um projeto acadêmico para análise de dados de cancelamentos de navios.</p>
-                <h4 style='margin-bottom: 0.5rem;'>Integrantes:</h4>
-                <ul style='list-style-type: none; padding: 0;'>
-                    <li style='margin-bottom: 0.5rem;'>👤 Arley do Nascimento Vinagre</li>
-                    <li style='margin-bottom: 0.5rem;'>👤 Vinicius Santana</li>
-                    <li style='margin-bottom: 0.5rem;'>👤 Tauan Santos Santana</li>
+        <div style='text-align: center; margin-bottom: 1.2rem;'>
+            <img src='https://img.icons8.com/color/96/000000/cruise-ship.png' style='width: 90px; margin-bottom: 0.7rem;'>
+            <h3 style='margin-bottom: 0.7rem;'>📋 Sobre o Projeto</h3>
+            <div style='background: rgba(255,255,255,0.10); padding: 0.7rem; border-radius: 10px;'>
+                <p style='margin-bottom: 0.7rem;'>Este dashboard foi desenvolvido como parte de um projeto acadêmico para análise de dados de cancelamentos de navios.</p>
+                <h4 style='margin-bottom: 0.3rem;'>Integrantes:</h4>
+                <ul style='list-style-type: none; padding: 0; margin: 0;'>
+                    <li style='margin-bottom: 0.3rem;'>👤 Arley do Nascimento Vinagre</li>
+                    <li style='margin-bottom: 0.3rem;'>👤 Vinicius Santana</li>
+                    <li style='margin-bottom: 0.3rem;'>👤 Tauan Santos Santana</li>
                 </ul>
             </div>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("""
-        <div style='background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 10px;'>
-            <h3 style='margin-bottom: 1rem;'>📊 Filtros</h3>
+        <div style='background: rgba(255,255,255,0.10); padding: 0.7rem; border-radius: 10px;'>
+            <h3 style='margin-bottom: 0.7rem;'>📊 Filtros</h3>
             <p>Faça upload do arquivo Excel para começar a análise.</p>
         </div>
     """, unsafe_allow_html=True)
