@@ -105,6 +105,42 @@ if uploaded_file is not None:
     mask_cancel = df[col_status].isin(valores_cancelados)
     df_cancel = df.loc[mask_cancel].copy()
 
+    # Preparar dados para o resumo
+    contagem_navios = df_cancel[col_navio].value_counts().reset_index()
+    contagem_navios.columns = ['Navio', 'QuantidadeCancelamentos']
+    
+    # Converter data e preparar análise temporal
+    df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], dayfirst=True, errors='coerce')
+    df_cancel['Ano'] = df_cancel[col_data].dt.year
+    df_cancel['Mês'] = df_cancel[col_data].dt.month
+    df_cancel['Y-M'] = df_cancel[col_data].dt.to_period('M').astype(str)
+    
+    # Análise mensal
+    contagem_mensal = df_cancel.groupby('Y-M').size().reset_index(name='Cancelamentos')
+    contagem_mensal['Y-M'] = pd.to_datetime(contagem_mensal['Y-M'], format='%Y-%m')
+    contagem_mensal = contagem_mensal.sort_values('Y-M')
+
+    # Resumo final na sidebar
+    with st.sidebar:
+        st.markdown("### 📊 Resumo dos Resultados")
+        
+        # Definir max_mes antes de usar
+        max_mes = None
+        if len(contagem_mensal) > 0:
+            max_mes = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
+        
+        resumo_texto = f"""
+            - **Total de cancelamentos:** {len(df_cancel):,}
+            - **Navio mais cancelado:** {contagem_navios.iloc[0]['Navio']} ({contagem_navios.iloc[0]['QuantidadeCancelamentos']} vezes)
+        """
+        
+        if max_mes is not None:
+            resumo_texto += f"""
+            - **Mês com mais cancelamentos:** {max_mes['Y-M'].strftime('%Y-%m')} ({int(max_mes['Cancelamentos'])} cancelamentos)
+            """
+        
+        st.markdown(resumo_texto)
+
     # Criar abas para diferentes análises
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📈 Visão Geral", 
@@ -158,10 +194,6 @@ if uploaded_file is not None:
     with tab2:
         st.header("🚢 Análise de Navios")
         
-        # Top 10 navios mais cancelados
-        contagem_navios = df_cancel[col_navio].value_counts().reset_index()
-        contagem_navios.columns = ['Navio', 'QuantidadeCancelamentos']
-        
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("🏆 Top 10 Navios com Mais Cancelamentos")
@@ -191,17 +223,6 @@ if uploaded_file is not None:
     with tab3:
         st.header("📅 Análise Temporal")
         
-        # Converter data
-        df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], dayfirst=True, errors='coerce')
-        df_cancel['Ano'] = df_cancel[col_data].dt.year
-        df_cancel['Mês'] = df_cancel[col_data].dt.month
-        df_cancel['Y-M'] = df_cancel[col_data].dt.to_period('M').astype(str)
-
-        # Análise mensal
-        contagem_mensal = df_cancel.groupby('Y-M').size().reset_index(name='Cancelamentos')
-        contagem_mensal['Y-M'] = pd.to_datetime(contagem_mensal['Y-M'], format='%Y-%m')
-        contagem_mensal = contagem_mensal.sort_values('Y-M')
-
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("📊 Cancelamentos por Mês")
@@ -356,27 +377,6 @@ if uploaded_file is not None:
                         showlegend=False
                     )
                     st.plotly_chart(fig, use_container_width=True)
-
-    # Resumo final na sidebar
-    with st.sidebar:
-        st.markdown("### 📊 Resumo dos Resultados")
-        
-        # Definir max_mes antes de usar
-        max_mes = None
-        if len(contagem_mensal) > 0:
-            max_mes = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
-        
-        resumo_texto = f"""
-            - **Total de cancelamentos:** {len(df_cancel):,}
-            - **Navio mais cancelado:** {contagem_navios.iloc[0]['Navio']} ({contagem_navios.iloc[0]['QuantidadeCancelamentos']} vezes)
-        """
-        
-        if max_mes is not None:
-            resumo_texto += f"""
-            - **Mês com mais cancelamentos:** {max_mes['Y-M'].strftime('%Y-%m')} ({int(max_mes['Cancelamentos'])} cancelamentos)
-            """
-        
-        st.markdown(resumo_texto)
 
 else:
     st.warning("⚠️ Por favor, faça o upload do arquivo Excel para começar a análise.") 
