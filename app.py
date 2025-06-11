@@ -314,31 +314,42 @@ if uploaded_file is not None:
     with tab2:
         st.header("🚢 Análise de Navios")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("🏆 Top 10 Navios com Mais Cancelamentos")
+        # Verificar se todos os navios têm o mesmo número de cancelamentos
+        if contagem_navios['QuantidadeCancelamentos'].nunique() == 1:
+            st.info("Todos os navios cancelados tiveram apenas 1 ocorrência no período analisado. Não há destaque para navios mais afetados.")
             st.dataframe(
                 contagem_navios.head(10),
                 use_container_width=True,
                 hide_index=True
             )
-        
-        with col2:
-            # Gráfico de barras com Plotly
-            fig = px.bar(
-                contagem_navios.head(5),
-                x='Navio',
-                y='QuantidadeCancelamentos',
-                title='Top 5 Navios com Mais Cancelamentos',
-                color='QuantidadeCancelamentos',
-                color_continuous_scale='Viridis'
-            )
-            fig.update_layout(
-                xaxis_title="Navio",
-                yaxis_title="Quantidade de Cancelamentos",
-                showlegend=False
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        else:
+            col1, col2 = st.columns([1.2, 1])
+            with col1:
+                st.subheader("🏆 Top 10 Navios com Mais Cancelamentos")
+                st.dataframe(
+                    contagem_navios.head(10),
+                    use_container_width=True,
+                    hide_index=True
+                )
+            with col2:
+                # Gráfico de barras horizontal para melhor visualização
+                fig = px.bar(
+                    contagem_navios.head(5),
+                    y='Navio',
+                    x='QuantidadeCancelamentos',
+                    orientation='h',
+                    title='Top 5 Navios com Mais Cancelamentos',
+                    color='QuantidadeCancelamentos',
+                    color_continuous_scale='Viridis',
+                    height=350
+                )
+                fig.update_layout(
+                    xaxis_title="Quantidade de Cancelamentos",
+                    yaxis_title="Navio",
+                    showlegend=False,
+                    margin=dict(l=60, r=20, t=50, b=40)
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
     with tab3:
         st.header("📅 Análise Temporal")
