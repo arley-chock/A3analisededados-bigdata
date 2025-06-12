@@ -51,21 +51,13 @@ def grafico_top_navios(df_cancel, col_navio):
 st.set_page_config(page_title="🚢 Dashboard de Cancelamentos", layout="wide")
 st.markdown("""
 <style>
-/* fundo escuro e texto legível */
 [data-testid="stAppViewContainer"] { background-color: #121212; color: #E0E0E0; }
-/* texto de parágrafos */
 .stMarkdown p, .dashboard-card p { font-size: 16px; line-height: 1.6; }
-/* cards */
 .dashboard-card { background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; }
-/* cabeçalhos centralizados */
 h1, h2, h3, h4 { text-align: center; }
-/* margem inferior de gráficos */
 .js-plotly-plot { margin-bottom: 3rem !important; }
-/* espaçamento extra */
 section.main > div.block-container { padding-top:2rem; padding-bottom:2rem; }
-/* espaço entre colunas */
 [data-testid="stColumns"] > div { margin-bottom: 2rem; }
-/* inputs e botões */
 .stTextInput, .stFileUploader, .stSelectbox, .stButton { margin-bottom:1.5rem; }
 </style>
 """, unsafe_allow_html=True)
@@ -135,7 +127,7 @@ if col_conteineres:
 if col_data:
     df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], errors='coerce', dayfirst=True)
 
-# ——— Extrair nome limpo do Navio ———
+# ——— Extrair nome limpo do navio ———
 
 NAVIO_COL = 'Navio / Viagem.1' if 'Navio / Viagem.1' in df_cancel.columns else col_navio_raw
 df_cancel['Navio'] = df_cancel[NAVIO_COL].astype(str).str.strip().str.title()
@@ -177,8 +169,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌍 Rotas", "📊 Adicionais", "💰 Custos"
 ])
 
-# ——— Aba 1: Visão Geral ———
-
 with tab1:
     st.header("📈 Visão Geral dos Cancelamentos")
     c1, c2, c3 = st.columns(3, gap="large")
@@ -199,8 +189,6 @@ with tab1:
     st.plotly_chart(theme_fig(fig_pie, altura=400), use_container_width=True)
     st.subheader("📋 Primeiros Registros")
     st.dataframe(df_cancel.head(), hide_index=True, use_container_width=True)
-
-# ——— Aba 2: Top Navios ———
 
 with tab2:
     st.header("🚢 Top 10 Navios Mais Cancelados")
@@ -236,8 +224,6 @@ with tab2:
                 fig_evo = px.line(evo, x='Mes', y='Cancelamentos', markers=True)
                 st.plotly_chart(theme_fig(fig_evo, altura=350), use_container_width=True)
 
-# ——— Aba 3: Análise Temporal ———
-
 with tab3:
     st.header("📅 Análise Temporal")
     m1, m2 = st.columns(2, gap="large")
@@ -251,8 +237,6 @@ with tab3:
     with m2:
         fig = px.line(cont_mensal, x='Mes', y='Cancelamentos', markers=True, title='Evolução Mensal')
         st.plotly_chart(theme_fig(fig), use_container_width=True)
-
-# ——— Aba 4: Análise de Rotas ———
 
 with tab4:
     st.header("🌍 Análise de Rotas")
@@ -273,8 +257,6 @@ with tab4:
     else:
         st.warning("Coluna de rotas não encontrada.")
 
-# ——— Aba 5: Análises Adicionais ———
-
 with tab5:
     st.header("📊 Análises Adicionais")
     sub1, sub2, sub3 = st.tabs(["Tipo de Navio","Contêineres","Armadores"])
@@ -294,7 +276,8 @@ with tab5:
                 st.dataframe(ct, hide_index=True, use_container_width=True)
             with c2:
                 fig = px.pie(ct, values='Cancelamentos', names='TipoNavio',
-                             title='Cancelamentos por Tipo', color_discrete_sequence=px.colors.qualitative.Set3)
+                             title='Cancelamentos por Tipo',
+                             color_discrete_sequence=px.colors.qualitative.Set3)
                 st.plotly_chart(theme_fig(fig, altura=350), use_container_width=True)
         else:
             st.warning("Coluna 'Tipo' não encontrada.")
@@ -333,8 +316,6 @@ with tab5:
         else:
             st.warning("Coluna 'Armador' não encontrada.")
 
-# ——— Aba 6: Análise de Custos ———
-
 with tab6:
     st.header("💰 Análise de Custos")
     C = {"TEU":1200.0,"OPER":1150.0,"DOC":950.0,"ARM_DIA":575.0,"ARM_DIAS":2,"INSP":95.0}
@@ -351,13 +332,18 @@ with tab6:
 
     if col_conteineres:
         df_c = calc_custos(df_cancel, col_conteineres)
+
+        # Métricas de custo
         m1, m2, m3 = st.columns(3, gap="large")
         with m1:
-            st.metric("Total Perdido", f"R$ {df_c['CUSTO_TOTAL'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.metric("Total Perdido",
+                      f"R$ {df_c['CUSTO_TOTAL'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         with m2:
-            st.metric("Médio por Cancel.", f"R$ {df_c['CUSTO_TOTAL'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.metric("Médio por Cancel.",
+                      f"R$ {df_c['CUSTO_TOTAL'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         with m3:
-            st.metric("TEUs Afetados", f"{df_c[col_conteineres].sum():,.0f}".replace(",", "."))
+            st.metric("TEUs Afetados",
+                      f"{df_c[col_conteineres].sum():,.0f}".replace(",", "."))
 
         # Distribuição de custos
         fig = px.box(df_c, y="CUSTO_TOTAL", title="Distribuição de Custo por Cancelamento")
@@ -370,33 +356,33 @@ with tab6:
             fig = px.line(cm, x="Mes", y="CUSTO_TOTAL", markers=True, title="Evolução Mensal de Custos")
             st.plotly_chart(theme_fig(fig), use_container_width=True)
 
-        # Componentes de custo (formatados)
-        comp = (
-            df_c[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]]
-            .sum()
-            .rename(index={
-                "C_TEUS":"THC (R$/TEU)",
-                "C_OPER":"Taxa Terminal",
-                "C_DOC":"Despachante",
-                "C_ARM":"Armazenagem (2 dias)",
-                "C_INSP":"Scanner"
-            })
-            .to_frame("Valor")
-            .reset_index()
-            .rename(columns={"index":"Tipo de Custo"})
-        )
-        # exibe tabela com formatação de moeda
+        # Componentes de custo
+        total_components = df_c[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum()
+        total_components.index = [
+            "THC (R$/TEU)",
+            "Taxa Terminal",
+            "Despachante",
+            "Armazenagem (2 dias)",
+            "Scanner"
+        ]
+        comp_numerical = total_components.reset_index()
+        comp_numerical.columns = ["Tipo de Custo","Valor"]
+
+        # Tabela formatada
+        comp_display = comp_numerical.copy()
+        comp_display["Valor"] = comp_display["Valor"]\
+            .apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
         st.subheader("Componentes de Custo")
-        st.dataframe(
-            comp,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Valor": st.column_config.NumberColumn(format="R$ %,.2f")
-            }
+        st.dataframe(comp_display, hide_index=True, use_container_width=True)
+
+        # Gráfico de pizza
+        fig = px.pie(
+            comp_numerical,
+            values="Valor",
+            names="Tipo de Custo",
+            title="Distribuição de Componentes"
         )
-        # pie chart
-        fig = px.pie(comp, values="Valor", names="Tipo de Custo", title="Distribuição de Componentes")
         st.plotly_chart(theme_fig(fig, altura=350), use_container_width=True)
 
     else:
