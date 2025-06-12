@@ -294,8 +294,8 @@ with st.sidebar:
     st.write(f"- Total de registros: {len(df):,}")
     st.write(f"- Total de cancelamentos filtrados: {len(df_cancel):,}")
     if not contagem_navios.empty:
-        top_n = contagem_navios.iloc[0]
-        st.write(f"- Navio mais cancelado: **{top_n['Navio']}** ({top_n['Cancelamentos']})")
+        top_navio = contagem_navios.iloc[0]
+        st.write(f"- Navio mais cancelado: **{top_navio.iloc[0]}** ({top_navio.iloc[1]})")
     if not contagem_mensal.empty:
         m = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
         st.write(f"- Mês crítico: **{m['Y-M']}** ({m['Cancelamentos']})")
