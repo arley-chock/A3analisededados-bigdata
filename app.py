@@ -1038,8 +1038,9 @@ if uploaded_file is not None:
                     .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (BRL)"})
                 )
 
-                # Formatar valores monetários na tabela de componentes
-                componentes["Valor Total (BRL)"] = componentes["Valor Total (BRL)"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                # Formatar valores monetários na tabela de componentes (apenas para exibição)
+                componentes_formatado = componentes.copy()
+                componentes_formatado["Valor Total (BRL)"] = componentes_formatado["Valor Total (BRL)"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
                 # Adicionar detalhes dos custos
                 st.markdown("""
@@ -1058,7 +1059,7 @@ if uploaded_file is not None:
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.dataframe(componentes, hide_index=True, use_container_width=True)
+                    st.dataframe(componentes_formatado, hide_index=True, use_container_width=True)
                 with col2:
                     st.plotly_chart(
                         px.pie(componentes, values="Valor Total (BRL)",
