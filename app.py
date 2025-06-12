@@ -329,7 +329,7 @@ if uploaded_file is not None:
             try:
                 # Preparar dados para o gráfico
                 if dimensao_x == "Mês":
-                    dados_x = df_cancel['Y-M'].astype(str)
+                    dados_x = df_cancel_valid['Y-M'].astype(str)
                 elif dimensao_x == "Navio":
                     dados_x = df_cancel[col_navio].astype(str)
                 elif dimensao_x == "Armador":
