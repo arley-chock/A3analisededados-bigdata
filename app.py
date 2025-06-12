@@ -1,224 +1,490 @@
 # -*- coding: utf-8 -*-
 """
-⚓ Dashboard Marítimo – Cancelamentos de Navios
-Trabalho acadêmico:
-- Arley do Nascimento Vinagre (12722132338)
-- Vinicius Santana            (1272221567)
-- Tauan Santos Santana        (12722216126)
+Análise de Levantamentos de Portos sobre Navios Cancelados
+
+Este aplicativo foi desenvolvido como projeto acadêmico para:
+- Arley do Nascimento Vinagre   (12722132338)
+- Vinicius Santana               (1272221567)
+- Tauan Santos Santana           (12722216126)
+
+Objetivo:
+Analisar, de forma interativa, os levantamentos em formato Excel dos portos
+sobre navios cancelados, identificando padrões temporais, os navios mais
+afetados, rotas, custos e outros insights operacionais.
 """
-# ─────────────────────────────────── importações
+
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
-# ─────────────────────────────────── configuração global
-st.set_page_config("⚓ Cancelamentos de Navios", "🚢", layout="wide")
-
-THEME_CSS = """
-<style>
-[data-testid="stAppViewContainer"]{
-  background:linear-gradient(180deg,#0a1f2f 0%,#02111e 100%);
-  color:#E0E0E0;}
-.dashboard-card{
-  background:rgba(255,255,255,.05);
-  padding:1.5rem;border-radius:12px;
-  margin-bottom:2rem;border:1px solid #0f3851;}
-h1,h2,h3,h4{text-align:center;margin-bottom:.5rem;}
-section.main>div.block-container{padding:2rem 1rem;}
-[data-testid="stSidebar"]>div{padding-top:1rem;}
-.stSelectbox>div>div{color:#0a84ff;}
-</style>"""
-st.markdown(THEME_CSS, unsafe_allow_html=True)
-
-# ─────────────────────────────────── cabeçalho
-st.markdown(
-    """
-<div class="dashboard-card">
-  <h1>⚓ Cancelamentos de Navios – Dashboard Interativo</h1>
-  <p>Desenvolvido por <b>Arley</b>, <b>Vinicius</b> e <b>Tauan</b> – Análise de Dados Portuários.</p>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-# ─────────────────────────────────── funções utilitárias
-def ajustar(fig, h=420):
-    fig.update_layout(template="plotly_dark", height=h, margin=dict(l=40, r=40, t=60, b=40))
+# ──────────────────────────────────────────────────────────────────────────────
+# Funções utilitárias
+# ──────────────────────────────────────────────────────────────────────────────
+def ajustar_layout_grafico(fig, altura=500):
+    """Aplica estilo transparência e margens a um gráfico Plotly."""
+    fig.update_layout(
+        template="plotly_dark",
+        height=altura,
+        margin=dict(l=50, r=50, t=50, b=50),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(size=12),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
     return fig
 
-def money(v):  # formatação BRL
-    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+# Referências de custo (2024-25)
+CUSTOS = {
+    "THC": 1200.0,    # R$ / TEU
+    "OPER": 1150.0,   # R$ fixo por cancelamento terminal
+    "DOC": 950.0,     # R$ despachante
+    "ARM_DAY": 575.0, # R$ / TEU / dia
+    "ARM_DAYS": 2,    # dias extras
+    "INSP": 95.0      # R$ / contêiner (scanner/fitossanitária)
+}
 
-def map_col(name, df):  # mapeamento resiliente
-    return name if name in df.columns else None
-
-def calcular_custos(df, col_teu, custos):
+def calcular_custos(df, col_teu):
+    """Adiciona colunas de custo ao df de cancelamentos."""
     df = df.copy()
-    df[col_teu] = pd.to_numeric(df[col_teu], errors="coerce").fillna(0)
-    df["C_TEUS"] = df[col_teu] * custos["THC_TEUS"]
-    df["C_OPER"] = custos["OPER_CANCEL"]
-    df["C_DOC"]  = custos["DESPACHO"]
-    df["C_ARM"]  = df[col_teu] * custos["ARMAZ_DIA_TEUS"] * custos["ARMAZ_DIAS_EXTRA"]
-    df["C_INSP"] = custos["SCANNER"]
-    df["CUSTO_TOTAL"] = df[["C_TEUS", "C_OPER", "C_DOC", "C_ARM", "C_INSP"]].sum(axis=1)
+    df[col_teu] = pd.to_numeric(df[col_teu], errors='coerce').fillna(0)
+    df["C_TEUS"] = df[col_teu] * CUSTOS["THC"]
+    df["C_OPER"] = CUSTOS["OPER"]
+    df["C_DOC"]  = CUSTOS["DOC"]
+    df["C_ARM"]  = df[col_teu] * CUSTOS["ARM_DAY"] * CUSTOS["ARM_DAYS"]
+    df["C_INSP"]= CUSTOS["INSP"]
+    df["CUSTO_TOTAL"] = df[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum(axis=1)
     return df
 
-# ─────────────────────────────────── sidebar – upload & filtros
+# ──────────────────────────────────────────────────────────────────────────────
+# Configuração da página e CSS
+# ──────────────────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="⚓ Dashboard Marítimo de Cancelamentos",
+    page_icon="🚢",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.markdown("""
+<style>
+[data-testid="stAppViewContainer"] {
+  background: linear-gradient(180deg,#0a1f2f 0%,#02111e 100%);
+  color: #E0E0E0;
+}
+.dashboard-card {
+  background: rgba(255,255,255,0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid #0f3851;
+}
+.js-plotly-plot {
+  margin: 1rem 0 !important;
+  padding: 1rem;
+  background: rgba(255,255,255,0.07) !important;
+  border-radius: 12px;
+}
+.stMetric {
+  margin: 1rem 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Header com autores e objetivo
+# ──────────────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="dashboard-card" style="text-align:center;">
+  <h1>🚢 Análise de Levantamentos de Cancelamentos de Navios</h1>
+  <p><b>Projeto Acadêmico</b> – Arley (12722132338), Vinicius (1272221567), Tauan (12722216126)</p>
+  <em>Objetivo: Analisar planilhas Excel de portos sobre navios cancelados, 
+  oferecendo gráficos e métricas interativas para apoiar decisões operacionais.</em>
+</div>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Sidebar: Upload, filtro por nome e referências de custo
+# ──────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    arquivo = st.file_uploader("📂 Carregar planilha Excel", type="xlsx")
-    filtro  = st.text_input("🔍 Filtrar navio ou armador (contém)")
-
+    st.markdown("### 📂 Upload & Filtros")
+    uploaded_file = st.file_uploader("Faça upload do Excel (.xlsx)", type="xlsx")
+    nome_filtro = st.text_input(
+        "🔍 Filtrar Navio por Nome",
+        help="Digite parte ou todo o nome do navio (case-insensitive)."
+    )
     st.markdown("---")
-    st.markdown("<small>Base de custos 2024–25 (alterar em código se necessário).</small>",
-                unsafe_allow_html=True)
+    st.markdown("### 💰 Referências de Custos (2024-25)")
+    st.write(f"- THC: R$ {CUSTOS['THC']:,.2f} / TEU")
+    st.write(f"- Operação Terminal: R$ {CUSTOS['OPER']:,.2f} / cancelamento")
+    st.write(f"- Despachante: R$ {CUSTOS['DOC']:,.2f}")
+    st.write(f"- Armazenagem: R$ {CUSTOS['ARM_DAY']:,.2f} / TEU / dia × {CUSTOS['ARM_DAYS']} dias")
+    st.write(f"- Scanner/Fitossanitária: R$ {CUSTOS['INSP']:,.2f} / contêiner")
 
-if not arquivo:
-    st.warning("Envie um arquivo '.xlsx' para iniciar.")
+if not uploaded_file:
+    st.warning("Por favor, carregue o arquivo Excel para iniciar a análise.")
     st.stop()
 
-# ─────────────────────────────────── leitura e pré-processamento
-df = pd.read_excel(arquivo)
+# ──────────────────────────────────────────────────────────────────────────────
+# Leitura e pré-processamento do Excel
+# ──────────────────────────────────────────────────────────────────────────────
+df = pd.read_excel(uploaded_file)
+# Remover espaços ao redor dos nomes de coluna
+df.columns = df.columns.str.strip()
 
-col_navio       = map_col("Navio / Viagem",        df)
-col_status      = map_col("Situação",              df)
-col_data        = map_col("Estimativa Chegada ETA",df)
-col_rota        = map_col("De / Para",             df)
-col_armador     = map_col("Armador",               df)
-col_teu         = map_col("Movs",                  df)
+# Mapeamento de colunas
+col_navio       = 'Navio / Viagem'             if 'Navio / Viagem' in df.columns else None
+col_status      = 'Situação'                   if 'Situação'       in df.columns else None
+col_data        = 'Estimativa Chegada ETA'     if 'Estimativa Chegada ETA' in df.columns else None
+col_etd         = 'Estimativa Saída ETD'       if 'Estimativa Saída ETD'   in df.columns else None
+col_rota        = 'De / Para'                  if 'De / Para'      in df.columns else None
+col_tipo_navio  = 'Tipo'                       if 'Tipo'           in df.columns else None
+col_conteineres = 'Movs'                       if 'Movs'           in df.columns else None
+col_armador     = 'Armador'                    if 'Armador'        in df.columns else None
+col_pais        = 'País'                       if 'País'           in df.columns else None
+col_servico     = 'Serviço'                    if 'Serviço'        in df.columns else None
+col_berco       = 'Berço'                      if 'Berço'          in df.columns else None
 
-if not col_status:
-    st.error("Coluna 'Situação' ausente – ajuste a planilha.")
+# Verificação de colunas mínimas
+if col_navio is None or col_status is None:
+    st.error("As colunas obrigatórias 'Navio / Viagem' e 'Situação' não foram encontradas.")
     st.stop()
 
-df[col_status] = df[col_status].astype(str).str.lower().str.strip()
-cancel_mask = df[col_status].isin(["cancelado","cancelada","rejeitado","rej.","canceled"])
-df_cancel = df.loc[cancel_mask].copy()
-
+# Filtrar apenas registros cancelados
+df[col_status] = df[col_status].astype(str).str.strip().str.lower()
+mask_cancel = df[col_status].isin(['cancelado','cancelada','rejeitado','rej.','canceled'])
+df_cancel = df.loc[mask_cancel].copy()
 if df_cancel.empty:
-    st.error("Nenhuma linha com status de cancelamento encontrada.")
+    st.warning("Não foram encontrados registros de navios cancelados.")
     st.stop()
 
-# filtro por texto
-if filtro:
-    flt = filtro.lower()
-    if col_navio:
-        df_cancel = df_cancel[df_cancel[col_navio].astype(str).str.lower().str.contains(flt)]
-    if col_armador and df_cancel.empty:
-        df_cancel = df_cancel[df_cancel[col_armador].astype(str).str.lower().str.contains(flt)]
+# Filtro adicional por nome de navio
+if nome_filtro:
+    mask_nome = df_cancel[col_navio].astype(str).str.contains(nome_filtro, case=False, na=False)
+    df_cancel = df_cancel.loc[mask_nome]
     if df_cancel.empty:
-        st.warning("Filtro não retornou resultados.")
+        st.warning(f"Nenhum navio contendo '{nome_filtro}' foi encontrado.")
         st.stop()
 
-# datas
+# Converter colunas numéricas
+if col_conteineres:
+    df_cancel[col_conteineres] = pd.to_numeric(df_cancel[col_conteineres], errors='coerce').fillna(0)
+
+# Converter datas e extrair dimensões temporais
 if col_data:
-    df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], errors="coerce")
-    df_cancel["YM"] = df_cancel[col_data].dt.to_period("M").astype(str)
+    df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], dayfirst=True, errors='coerce')
+    df_cancel = df_cancel.dropna(subset=[col_data])
+    df_cancel['Ano']  = df_cancel[col_data].dt.year
+    df_cancel['Mês']  = df_cancel[col_data].dt.month
+    df_cancel['Y-M']  = df_cancel[col_data].dt.to_period('M').astype(str)
+else:
+    st.warning("Coluna de data 'Estimativa Chegada ETA' não encontrada; análises temporais limitadas.")
 
-# custos
-CUSTOS = dict(
-    THC_TEUS        = 1200.0,
-    OPER_CANCEL     = 1150.0,
-    DESPACHO        =  950.0,
-    ARMAZ_DIA_TEUS  =  575.0,
-    ARMAZ_DIAS_EXTRA=    2 ,
-    SCANNER         =   95.0,
+# Calcular tempo de permanência em horas (ETA → ETD)
+if col_data and col_etd:
+    df_cancel[col_etd] = pd.to_datetime(df_cancel[col_etd], dayfirst=True, errors='coerce')
+    df_cancel['Tempo_Permanencia'] = (
+        (df_cancel[col_etd] - df_cancel[col_data])
+        .dt.total_seconds() / 3600
+    )
+
+# Calcular custos
+if col_conteineres:
+    df_cancel = calcular_custos(df_cancel, col_conteineres)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Pré-computar tabelas de contagem
+# ──────────────────────────────────────────────────────────────────────────────
+contagem_navios = (
+    df_cancel[col_navio]
+    .value_counts()
+    .reset_index()
+    .rename(columns={'index':'Navio', col_navio:'Cancelamentos'})
 )
-if col_teu: df_cancel = calcular_custos(df_cancel, col_teu, CUSTOS)
 
-# ─────────────────────────────────── abas
-aba1, aba2, aba3, aba4, aba5 = st.tabs(
-    ["📊 Visão Geral", "🚢 Navios", "📅 Temporal", "🌍 Rotas", "💰 Custos"]
+contagem_mensal = (
+    df_cancel.groupby('Y-M')
+             .size()
+             .reset_index(name='Cancelamentos')
+             .sort_values('Y-M')
 )
 
-# ── aba 1: visão geral
-with aba1:
-    colA, colB, colC = st.columns(3)
-    colA.metric("Linhas totais", f"{len(df):,}")
-    colB.metric("Cancelamentos", f"{len(df_cancel):,}", f"{len(df_cancel)/len(df)*100:.1f}%")
-    if col_teu:
-        colC.metric("TEUs afetados", f"{df_cancel[col_teu].sum():,.0f}")
+contagem_rotas = pd.DataFrame()
+if col_rota:
+    contagem_rotas = (
+        df_cancel[col_rota]
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index':'Rota', col_rota:'Cancelamentos'})
+    )
 
-    # waffle / pizza
+contagem_tipo = pd.DataFrame()
+if col_tipo_navio:
+    contagem_tipo = (
+        df_cancel[col_tipo_navio]
+        .astype(str).str.capitalize()
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index':'TipoNavio', col_tipo_navio:'Cancelamentos'})
+    )
+
+contagem_armadores = pd.DataFrame()
+if col_armador:
+    contagem_armadores = (
+        df_cancel[col_armador]
+        .astype(str).str.capitalize()
+        .replace({'nan': 'Não Informado', 'None': 'Não Informado', '': 'Não Informado'})
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index': 'Armador', col_armador: 'Cancelamentos'})
+    )
+
+contagem_servicos = pd.DataFrame()
+if col_servico:
+    contagem_servicos = (
+        df_cancel[col_servico]
+        .astype(str).str.capitalize()
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index':'Serviço', col_servico:'Cancelamentos'})
+    )
+
+contagem_paises = pd.DataFrame()
+if col_pais:
+    contagem_paises = (
+        df_cancel[col_pais]
+        .astype(str).str.capitalize()
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index':'País', col_pais:'Cancelamentos'})
+    )
+
+contagem_bercos = pd.DataFrame()
+if col_berco:
+    contagem_bercos = (
+        df_cancel[col_berco]
+        .astype(str).str.capitalize()
+        .value_counts()
+        .reset_index()
+        .rename(columns={'index':'Berço', col_berco:'Cancelamentos'})
+    )
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Resumo rápido na sidebar
+# ──────────────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### 📊 Resumo Após Filtros")
+    st.write(f"- Total de registros: {len(df):,}")
+    st.write(f"- Total de cancelamentos filtrados: {len(df_cancel):,}")
+    if not contagem_navios.empty:
+        top_n = contagem_navios.iloc[0]
+        st.write(f"- Navio mais cancelado: **{top_n['Navio']}** ({top_n['Cancelamentos']})")
+    if not contagem_mensal.empty:
+        m = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
+        st.write(f"- Mês crítico: **{m['Y-M']}** ({m['Cancelamentos']})")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Abas de Análise
+# ──────────────────────────────────────────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📈 Visão Geral",
+    "🚢 Top Navios & Armadores",
+    "📅 Análise Temporal",
+    "🌍 Rotas & Países",
+    "📊 Distribuições & Correlações",
+    "💰 Análise de Custos"
+])
+
+# ─── Tab 1: Visão Geral
+with tab1:
+    st.header("📈 Visão Geral dos Cancelamentos")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total de Linhas", f"{len(df):,}")
+    c2.metric("Cancelamentos", f"{len(df_cancel):,}", f"{len(df_cancel)/len(df)*100:.1f}%")
+    if col_conteineres:
+        c3.metric("TEUs Afetados", f"{df_cancel[col_conteineres].sum():,}")
+    if col_data:
+        dias = (df_cancel[col_data].max() - df_cancel[col_data].min()).days
+        c4.metric("Período Analisado", f"{dias:,} dias")
+
     fig_pie = px.pie(
-        names=["Cancelados","Não cancelados"],
-        values=[len(df_cancel),len(df)-len(df_cancel)],
-        hole=.45, title="Proporção de Cancelamentos",
+        names=["Cancelados","Não Cancelados"],
+        values=[len(df_cancel), len(df)-len(df_cancel)],
+        title="Proporção de Cancelamentos",
+        hole=0.4,
         color_discrete_sequence=px.colors.qualitative.Set3
     )
-    st.plotly_chart(ajustar(fig_pie,350), use_container_width=True)
+    st.plotly_chart(ajustar_layout_grafico(fig_pie, 350), use_container_width=True)
 
-# ── aba 2: navios
-with aba2:
-    st.subheader("Navios mais afetados")
-    if col_navio:
-        topn = df_cancel[col_navio].value_counts().reset_index()
-        topn.columns = ["Navio","Cancelamentos"]
-
-        fig = px.bar(
-            topn.head(10), y="Navio", x="Cancelamentos", orientation="h",
-            title="Top 10 Navios Cancelados", color="Cancelamentos",
-            color_continuous_scale="Viridis"
+# ─── Tab 2: Top Navios & Armadores
+with tab2:
+    st.header("🚢 Top Navios")
+    if not contagem_navios.empty:
+        fig_nav = px.bar(
+            contagem_navios.head(10),
+            x='Cancelamentos', y='Navio',
+            orientation='h',
+            title="Top 10 Navios Cancelados",
+            color='Cancelamentos',
+            color_continuous_scale='Viridis'
         )
-        st.plotly_chart(ajustar(fig), use_container_width=True)
-        st.dataframe(topn, use_container_width=True)
+        st.plotly_chart(ajustar_layout_grafico(fig_nav), use_container_width=True)
+        st.dataframe(contagem_navios.head(10), use_container_width=True)
     else:
-        st.info("Coluna de navio não disponível.")
+        st.info("Nenhum dado de navio disponível.")
 
-# ── aba 3: tempo
-with aba3:
-    if col_data:
-        st.subheader("Evolução mensal")
-        mensal = df_cancel["YM"].value_counts().sort_index().reset_index()
-        mensal.columns = ["YM","Cancelamentos"]
-
-        fig = px.line(mensal, x="YM", y="Cancelamentos", markers=True,
-                      title="Cancelamentos por mês")
-        st.plotly_chart(ajustar(fig), use_container_width=True)
-        st.dataframe(mensal, use_container_width=True)
+    st.markdown("---")
+    st.header("🏢 Top Armadores")
+    if not contagem_armadores.empty:
+        fig_arm = px.bar(
+            contagem_armadores.head(10),
+            x='Cancelamentos', y='Armador',
+            orientation='h',
+            title="Top 10 Armadores",
+            color='Cancelamentos',
+            color_continuous_scale='Viridis'
+        )
+        st.plotly_chart(ajustar_layout_grafico(fig_arm), use_container_width=True)
+        st.dataframe(contagem_armadores.head(10), use_container_width=True)
     else:
-        st.info("Planilha não tem coluna de data.")
+        st.info("Nenhum dado de armador disponível.")
 
-# ── aba 4: rotas
-with aba4:
-    if col_rota:
-        st.subheader("Rotas com mais cancelamentos")
-        rot = df_cancel[col_rota].value_counts().reset_index()
-        rot.columns=["Rota","Cancelamentos"]
-        fig = px.bar(rot.head(10), x="Rota", y="Cancelamentos",
-                     title="Top 10 Rotas", color="Cancelamentos",
-                     color_continuous_scale="Viridis")
-        st.plotly_chart(ajustar(fig), use_container_width=True)
-        st.dataframe(rot, use_container_width=True)
+# ─── Tab 3: Análise Temporal
+with tab3:
+    st.header("📅 Cancelamentos por Mês")
+    if not contagem_mensal.empty:
+        fig_time = px.line(
+            contagem_mensal, x='Y-M', y='Cancelamentos',
+            title="Evolução Mensal de Cancelamentos",
+            markers=True
+        )
+        fig_time.update_layout(xaxis_title="Mês", yaxis_title="Qtde")
+        st.plotly_chart(ajustar_layout_grafico(fig_time), use_container_width=True)
+        st.dataframe(contagem_mensal, use_container_width=True)
     else:
-        st.info("Coluna de rota ausente.")
+        st.info("Dados temporais indisponíveis.")
 
-# ── aba 5: custos
-with aba5:
-    if "CUSTO_TOTAL" in df_cancel.columns:
-        st.subheader("Resumo financeiro dos cancelamentos")
-
-        total = df_cancel["CUSTO_TOTAL"].sum()
-        medio = df_cancel["CUSTO_TOTAL"].mean()
-        col1,col2 = st.columns(2)
-        col1.metric("Custo total", money(total))
-        col2.metric("Custo médio", money(medio))
-
-        fig_box = px.box(df_cancel, y="CUSTO_TOTAL",
-                         title="Distribuição do custo por cancelamento")
-        st.plotly_chart(ajustar(fig_box), use_container_width=True)
-
-        comp = df_cancel[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum().reset_index()
-        comp.columns=["Tipo","Valor"]
-        comp["Tipo"] = comp["Tipo"].map({
-            "C_TEUS":"THC", "C_OPER":"Cancelamento",
-            "C_DOC":"Despacho", "C_ARM":"Armazenagem", "C_INSP":"Scanner"})
-        fig_pie2 = px.pie(comp, names="Tipo", values="Valor",
-                          title="Composição de custos",
-                          color_discrete_sequence=px.colors.qualitative.Set3)
-        st.plotly_chart(ajustar(fig_pie2,400), use_container_width=True)
-        st.dataframe(comp.assign(Valor=comp["Valor"].apply(money)),
-                     use_container_width=True, hide_index=True)
+# ─── Tab 4: Rotas & Países
+with tab4:
+    st.header("🌍 Rotas com Mais Cancelamentos")
+    if not contagem_rotas.empty:
+        fig_rot = px.bar(
+            contagem_rotas.head(10),
+            x='Cancelamentos', y='Rota',
+            orientation='h',
+            title="Top 10 Rotas",
+            color='Cancelamentos',
+            color_continuous_scale='Viridis'
+        )
+        st.plotly_chart(ajustar_layout_grafico(fig_rot), use_container_width=True)
+        st.dataframe(contagem_rotas.head(10), use_container_width=True)
     else:
-        st.info("Sem coluna de TEUs → custos não calculados.")
+        st.info("Dados de rotas indisponíveis.")
+
+    st.markdown("---")
+    st.header("🗺️ Países com Mais Cancelamentos")
+    if not contagem_paises.empty:
+        fig_pais = px.bar(
+            contagem_paises.head(10),
+            x='Cancelamentos', y='País',
+            orientation='h',
+            title="Top 10 Países",
+            color='Cancelamentos',
+            color_continuous_scale='Viridis'
+        )
+        st.plotly_chart(ajustar_layout_grafico(fig_pais), use_container_width=True)
+        st.dataframe(contagem_paises.head(10), use_container_width=True)
+    else:
+        st.info("Dados de países indisponíveis.")
+
+# ─── Tab 5: Distribuições & Correlações
+with tab5:
+    st.header("📊 Distribuições e Correlações")
+
+    sub1, sub2, sub3 = st.tabs([
+        "Tipo de Navio", "Contêineres", "Correlação Numérica"
+    ])
+
+    with sub1:
+        if not contagem_tipo.empty:
+            fig_tipo = px.pie(
+                contagem_tipo,
+                names='TipoNavio', values='Cancelamentos',
+                title="Distribuição por Tipo de Navio",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(ajustar_layout_grafico(fig_tipo,400), use_container_width=True)
+            st.dataframe(contagem_tipo, use_container_width=True)
+        else:
+            st.info("Dados de tipo de navio indisponíveis.")
+
+    with sub2:
+        if col_conteineres:
+            desc = df_cancel[col_conteineres].describe().round(1).reset_index()
+            st.subheader("Estatísticas de Contêineres")
+            st.dataframe(desc, use_container_width=True)
+            fig_hist = px.histogram(
+                df_cancel, x=col_conteineres,
+                nbins=20, title="Histograma de TEUs",
+                color_discrete_sequence=['#4CAF50']
+            )
+            st.plotly_chart(ajustar_layout_grafico(fig_hist), use_container_width=True)
+        else:
+            st.info("Coluna de contêineres ausente.")
+
+    with sub3:
+        nums = df_cancel.select_dtypes(include=[np.number]).columns
+        if len(nums)>1:
+            corr = df_cancel[nums].corr()
+            fig_corr = px.imshow(
+                corr, text_auto=True,
+                title="Matriz de Correlação",
+                color_continuous_scale='RdBu'
+            )
+            st.plotly_chart(ajustar_layout_grafico(fig_corr), use_container_width=True)
+            st.dataframe(corr, use_container_width=True)
+        else:
+            st.info("Colunas numéricas insuficientes para correlação.")
+
+# ─── Tab 6: Análise de Custos
+with tab6:
+    st.header("💰 Análise de Custos de Exportação")
+    if 'CUSTO_TOTAL' in df_cancel.columns:
+        total = df_cancel['CUSTO_TOTAL'].sum()
+        medio = df_cancel['CUSTO_TOTAL'].mean()
+        colA, colB = st.columns(2)
+        colA.metric("Custo Total Perdido", f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        colB.metric("Custo Médio / Cancel.", f"R$ {medio:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        fig_box = px.box(
+            df_cancel, y='CUSTO_TOTAL',
+            title="Distribuição do Custo por Cancelamento"
+        )
+        st.plotly_chart(ajustar_layout_grafico(fig_box), use_container_width=True)
+
+        comp = (
+            df_cancel[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]]
+            .sum()
+            .rename({
+                "C_TEUS":"THC",
+                "C_OPER":"Cancelamento",
+                "C_DOC":"Despachante",
+                "C_ARM":"Armazenagem",
+                "C_INSP":"Scanner"
+            })
+            .reset_index()
+            .rename(columns={"index":"Tipo","C_TEUS":"Valor"})
+        )
+        fig_pie2 = px.pie(
+            comp, names='Tipo', values=0,
+            title="Composição de Custos",
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+        st.plotly_chart(ajustar_layout_grafico(fig_pie2,400), use_container_width=True)
+        st.dataframe(comp.assign(Valor=comp[0].map(lambda x: f"R$ {x:,.2f}")), use_container_width=True, hide_index=True)
+    else:
+        st.info("Não foi possível calcular custos (coluna de TEUs ausente).")
