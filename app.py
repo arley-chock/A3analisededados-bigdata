@@ -18,6 +18,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 
+def ajustar_layout_grafico(fig, altura=500):
+    fig.update_layout(
+        height=altura,
+        margin=dict(l=50, r=50, t=50, b=50),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(size=12),
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    return fig
+
 # Configuração da página
 st.set_page_config(
     page_title="Análise de Cancelamentos de Navios",
@@ -48,128 +66,74 @@ with st.sidebar:
 # Estilo CSS personalizado
 st.markdown("""
     <style>
-    html, body, [class*="css"] {
-        font-family: 'Inter', Arial, sans-serif !important;
-    }
+    /* Ajustes gerais de layout */
     .main {
-        padding: 2.5rem 1.5rem 1.5rem 1.5rem;
-        background: var(--background-color, #181a1b);
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
     }
-    .stMetric, .stDataFrame, .stMarkdown, .js-plotly-plot, .stFileUploader, .stContainer {
+    
+    /* Ajustes para gráficos */
+    .js-plotly-plot {
+        margin: 1rem 0;
+        padding: 1rem;
         background: rgba(255,255,255,0.07);
-        border-radius: 18px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        border: 1px solid rgba(200,200,200,0.08);
-        transition: transform 0.2s ease-in-out;
-    }
-    .stMetric:hover, .stDataFrame:hover, .stMarkdown:hover, .js-plotly-plot:hover, .stFileUploader:hover, .stContainer:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 1.5rem;
-        background: transparent;
-        padding: 0.8rem 0;
-        margin-bottom: 1rem;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: rgba(240,242,246,0.13);
-        border-radius: 12px 12px 0 0;
-        color: var(--text-color, #eaeaea);
-        font-weight: 500;
-        font-size: 1.1rem;
-        transition: all 0.3s ease;
-        padding: 0.8rem 1.8rem;
-        margin-right: 0.3rem;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(76,175,80,0.13);
-        color: #4CAF50;
-        transform: translateY(-2px);
-    }
-    .stTabs [aria-selected="true"] {
-        background: #4CAF50;
-        color: #fff;
-        box-shadow: 0 4px 6px rgba(76,175,80,0.2);
-    }
-    h1, h2, h3, h4, h5, h6 {
-        color: var(--text-color, #fff);
-        font-family: 'Inter', Arial, sans-serif;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        letter-spacing: -0.5px;
-    }
-    h1 { font-size: 2.8rem; margin-bottom: 1.5rem; }
-    h2 { font-size: 2.2rem; margin-bottom: 1.2rem; }
-    h3 { font-size: 1.6rem; margin-bottom: 1rem; }
-    .stSubheader {
-        color: #4CAF50;
-        font-weight: 600;
-        border-bottom: 2px solid #4CAF50;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1.5rem;
-        font-size: 1.3rem;
-    }
-    .stButton button {
-        background: #4CAF50;
-        color: #fff;
         border-radius: 12px;
-        border: none;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        font-size: 1.1rem;
-        padding: 0.7rem 1.5rem;
-        box-shadow: 0 4px 6px rgba(76,175,80,0.2);
-    }
-    .stButton button:hover {
-        background: #388e3c;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(76,175,80,0.3);
-    }
-    /* Sidebar adaptativo */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #23272f 70%, #4CAF50 100%) !important;
-        color: #fff !important;
-        padding: 1rem !important;
-    }
-    section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] li {
-        color: #fff !important;
-        font-size: 1.1rem;
-    }
-    section[data-testid="stSidebar"] ul {
-        margin-bottom: 1rem;
-    }
-    /* Cards principais */
-    .dashboard-card {
-        background: rgba(255,255,255,0.10);
-        border-radius: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Ajustes para containers */
+    .stContainer {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+    
+    /* Ajustes para colunas */
+    [data-testid="column"] {
+        padding: 0 1rem;
+    }
+    
+    /* Ajustes para métricas */
+    .stMetric {
+        margin: 1rem 0;
+    }
+    
+    /* Ajustes para abas */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 0.8rem 1.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    /* Ajustes para cards */
+    .dashboard-card {
+        margin: 1.5rem 0;
         padding: 1.5rem;
-        margin-bottom: 2rem;
-        border: 1px solid rgba(200,200,200,0.08);
-        max-width: 1000px;
-        margin-left: auto;
-        margin-right: auto;
-        transition: transform 0.2s ease-in-out;
     }
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-    }
-    /* Responsividade */
-    @media (max-width: 900px) {
-        .main { padding: 1rem; }
-        .stContainer, .stMetric, .stDataFrame, .stMarkdown, .dashboard-card { 
+    
+    /* Ajustes responsivos */
+    @media (max-width: 1200px) {
+        .main {
             padding: 1rem;
-            margin-bottom: 1rem;
         }
-        h1 { font-size: 2rem; }
-        h2 { font-size: 1.6rem; }
+        
+        [data-testid="column"] {
+            padding: 0 0.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main {
+            padding: 0.5rem;
+        }
+        
         .stTabs [data-baseweb="tab"] {
-            padding: 0.6rem 1.2rem;
-            font-size: 1rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
         }
     }
     </style>
@@ -258,6 +222,7 @@ if uploaded_file is not None:
     col_rota = 'De / Para' if 'De / Para' in df.columns else None
     col_tipo_navio = 'Tipo' if 'Tipo' in df.columns else None
     col_conteineres = 'Movs' if 'Movs' in df.columns else None
+    col_armador = 'Armador' if 'Armador' in df.columns else None
 
     # Filtrar cancelamentos
     if col_status is not None:
@@ -393,7 +358,7 @@ if uploaded_file is not None:
                     # Ordenar por valores
                     df_grafico = df_grafico.sort_values(by=dimensao_y, ascending=False)
 
-                    # Criar gráfico
+                    # Criar gráfico com layout ajustado
                     fig = px.bar(
                         df_grafico,
                         x=dimensao_x,
@@ -402,14 +367,7 @@ if uploaded_file is not None:
                         color=dimensao_y,
                         color_continuous_scale='Viridis'
                     )
-                    
-                    # Ajustar layout
-                    fig.update_layout(
-                        xaxis_title=dimensao_x,
-                        yaxis_title=dimensao_y,
-                        showlegend=False
-                    )
-                    
+                    fig = ajustar_layout_grafico(fig, altura=500)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.warning(f"Não há dados disponíveis para a dimensão {dimensao_x}")
@@ -424,6 +382,7 @@ if uploaded_file is not None:
             title='Distribuição de Cancelamentos',
             color_discrete_sequence=px.colors.qualitative.Set3
         )
+        fig = ajustar_layout_grafico(fig, altura=400)
         st.plotly_chart(fig, use_container_width=True)
 
         # Exibir primeiros registros com estilo
@@ -600,7 +559,6 @@ if uploaded_file is not None:
         
         with sub_tab3:
             # Análise por Armador
-            col_armador = 'Armador' if 'Armador' in df_cancel.columns else None
             if col_armador is not None:
                 st.subheader("🏢 Análise por Armador")
                 
