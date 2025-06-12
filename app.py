@@ -134,7 +134,7 @@ df = pd.read_excel(uploaded_file)
 df.columns = df.columns.str.strip()
 
 # Mapeamento de colunas essenciais
-col_navio       = 'Navio / Viagem1'         if 'Navio / Viagem'         in df.columns else None
+col_navio       = 'Navio / Viagem1'         if 'Navio / Viagem1'         in df.columns else None
 col_status      = 'Situação'               if 'Situação'               in df.columns else None
 col_data        = 'Estimativa Chegada ETA' if 'Estimativa Chegada ETA' in df.columns else None
 col_etd         = 'Estimativa Saída ETD'   if 'Estimativa Saída ETD'   in df.columns else None
@@ -144,7 +144,7 @@ col_armador     = 'Armador'                if 'Armador'                in df.col
 col_conteineres = 'Movs'                   if 'Movs'                   in df.columns else None
 
 if not col_navio or not col_status:
-    st.error("As colunas obrigatórias 'Navio / Viagem' e 'Situação' não foram encontradas.")
+    st.error("As colunas obrigatórias 'Navio / Viagem1' e 'Situação' não foram encontradas.")
     st.stop()
 
 # Filtrar apenas cancelamentos
