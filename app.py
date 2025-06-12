@@ -26,6 +26,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Adicionar barra de pesquisa e modelos de relatórios
+with st.sidebar:
+    st.markdown("### 🔍 Pesquisa e Modelos")
+    
+    # Barra de pesquisa
+    termo_pesquisa = st.text_input("Pesquisar por navio, armador ou rota")
+    
+    # Modelos de relatórios
+    st.markdown("### 📋 Modelos de Relatórios")
+    modelo_selecionado = st.selectbox(
+        "Selecione um modelo de relatório",
+        ["Análise Completa", "Análise de Custos", "Análise por Armador", "Análise Temporal"]
+    )
+    
+    # Botão para aplicar modelo
+    if st.button("Aplicar Modelo"):
+        st.session_state['modelo_atual'] = modelo_selecionado
+        st.session_state['termo_pesquisa'] = termo_pesquisa
+
 # Estilo CSS personalizado
 st.markdown("""
     <style>
@@ -39,97 +58,119 @@ st.markdown("""
     .stMetric, .stDataFrame, .stMarkdown, .js-plotly-plot, .stFileUploader, .stContainer {
         background: rgba(255,255,255,0.07);
         border-radius: 18px;
-        box-shadow: none;
-        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
-        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
         border: 1px solid rgba(200,200,200,0.08);
+        transition: transform 0.2s ease-in-out;
+    }
+    .stMetric:hover, .stDataFrame:hover, .stMarkdown:hover, .js-plotly-plot:hover, .stFileUploader:hover, .stContainer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
     .stTabs [data-baseweb="tab-list"] {
         gap: 1.5rem;
         background: transparent;
-        padding: 0.5rem 0;
-        margin-bottom: 0.5rem;
+        padding: 0.8rem 0;
+        margin-bottom: 1rem;
     }
     .stTabs [data-baseweb="tab"] {
         background: rgba(240,242,246,0.13);
-        border-radius: 10px 10px 0 0;
+        border-radius: 12px 12px 0 0;
         color: var(--text-color, #eaeaea);
         font-weight: 500;
         font-size: 1.1rem;
-        transition: background 0.2s, color 0.2s;
-        padding: 0.7rem 1.5rem;
-        margin-right: 0.2rem;
+        transition: all 0.3s ease;
+        padding: 0.8rem 1.8rem;
+        margin-right: 0.3rem;
     }
     .stTabs [data-baseweb="tab"]:hover {
         background: rgba(76,175,80,0.13);
         color: #4CAF50;
+        transform: translateY(-2px);
     }
     .stTabs [aria-selected="true"] {
         background: #4CAF50;
         color: #fff;
+        box-shadow: 0 4px 6px rgba(76,175,80,0.2);
     }
     h1, h2, h3, h4, h5, h6 {
         color: var(--text-color, #fff);
         font-family: 'Inter', Arial, sans-serif;
         font-weight: 700;
-        margin-bottom: 0.7rem;
-        letter-spacing: -1px;
+        margin-bottom: 1rem;
+        letter-spacing: -0.5px;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 1.2rem; }
-    h2 { font-size: 2rem; margin-bottom: 1rem; }
-    h3 { font-size: 1.4rem; margin-bottom: 0.7rem; }
+    h1 { font-size: 2.8rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 2.2rem; margin-bottom: 1.2rem; }
+    h3 { font-size: 1.6rem; margin-bottom: 1rem; }
     .stSubheader {
         color: #4CAF50;
         font-weight: 600;
         border-bottom: 2px solid #4CAF50;
-        padding-bottom: 0.3rem;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
     }
     .stButton button {
         background: #4CAF50;
         color: #fff;
-        border-radius: 8px;
+        border-radius: 12px;
         border: none;
         font-weight: 600;
-        transition: background 0.2s;
-        font-size: 1rem;
-        padding: 0.5rem 1.2rem;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        padding: 0.7rem 1.5rem;
+        box-shadow: 0 4px 6px rgba(76,175,80,0.2);
     }
     .stButton button:hover {
         background: #388e3c;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(76,175,80,0.3);
     }
     /* Sidebar adaptativo */
     section[data-testid="stSidebar"] {
         background: linear-gradient(135deg, #23272f 70%, #4CAF50 100%) !important;
         color: #fff !important;
-        padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
+        padding: 1rem !important;
     }
     section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] li {
         color: #fff !important;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
     section[data-testid="stSidebar"] ul {
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem;
     }
     /* Cards principais */
     .dashboard-card {
         background: rgba(255,255,255,0.10);
-        border-radius: 18px;
-        box-shadow: none;
-        padding: 1.2rem 1.2rem 1.2rem 1.2rem;
-        margin-bottom: 1.5rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
         border: 1px solid rgba(200,200,200,0.08);
-        max-width: 900px;
+        max-width: 1000px;
         margin-left: auto;
         margin-right: auto;
+        transition: transform 0.2s ease-in-out;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
     }
     /* Responsividade */
     @media (max-width: 900px) {
-        .main { padding: 0.5rem; }
-        .stContainer, .stMetric, .stDataFrame, .stMarkdown, .dashboard-card { padding: 0.5rem; }
-        h1 { font-size: 1.5rem; }
-        h2 { font-size: 1.2rem; }
+        .main { padding: 1rem; }
+        .stContainer, .stMetric, .stDataFrame, .stMarkdown, .dashboard-card { 
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.6rem; }
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -273,6 +314,19 @@ if uploaded_file is not None:
     with tab1:
         st.header("📊 Visão Geral dos Cancelamentos")
         
+        # Adicionar seletores para cruzamento de dados
+        col1, col2 = st.columns(2)
+        with col1:
+            dimensao_x = st.selectbox(
+                "Selecione a dimensão para o eixo X",
+                ["Mês", "Navio", "Armador", "Rota", "Tipo de Navio"]
+            )
+        with col2:
+            dimensao_y = st.selectbox(
+                "Selecione a dimensão para o eixo Y",
+                ["Quantidade de Cancelamentos", "Custo Total", "TEUs", "Tempo de Permanência"]
+            )
+        
         # Métricas principais com cards estilizados
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -293,6 +347,43 @@ if uploaded_file is not None:
                 f"{(len(df_cancel)/30):.1f}",
                 delta="cancelamentos por dia"
             )
+
+        # Gráfico de cruzamento de dados
+        if dimensao_x and dimensao_y:
+            # Preparar dados para o gráfico
+            if dimensao_x == "Mês":
+                dados_x = df_cancel['Y-M']
+            elif dimensao_x == "Navio":
+                dados_x = df_cancel[col_navio]
+            elif dimensao_x == "Armador":
+                dados_x = df_cancel[col_armador] if col_armador else None
+            elif dimensao_x == "Rota":
+                dados_x = df_cancel[col_rota]
+            elif dimensao_x == "Tipo de Navio":
+                dados_x = df_cancel[col_tipo_navio]
+
+            if dimensao_y == "Quantidade de Cancelamentos":
+                dados_y = df_cancel.groupby(dados_x).size()
+            elif dimensao_y == "Custo Total":
+                dados_y = df_cancel.groupby(dados_x)['CUSTO_TOTAL'].sum()
+            elif dimensao_y == "TEUs":
+                dados_y = df_cancel.groupby(dados_x)[col_conteineres].sum()
+            elif dimensao_y == "Tempo de Permanência":
+                dados_y = df_cancel.groupby(dados_x)['Tempo_Permanencia'].mean()
+
+            # Criar gráfico
+            fig = px.bar(
+                x=dados_x,
+                y=dados_y,
+                title=f"{dimensao_y} por {dimensao_x}",
+                labels={
+                    "x": dimensao_x,
+                    "y": dimensao_y
+                },
+                color=dados_y,
+                color_continuous_scale='Viridis'
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
         # Gráfico de pizza com Plotly
         fig = px.pie(
@@ -920,7 +1011,8 @@ if uploaded_file is not None:
                 # Gráficos de distribuição e evolução temporal
                 st.plotly_chart(
                     px.box(df_cancel, y="CUSTO_TOTAL",
-                        title="Distribuição do Custo por Cancelamento"),
+                        title="Distribuição do Custo por Cancelamento",
+                        labels={"CUSTO_TOTAL": "Custo Total (R$)"}),
                     use_container_width=True
                 )
 
@@ -933,7 +1025,9 @@ if uploaded_file is not None:
 
                     st.plotly_chart(
                         px.line(custos_mensais, x="Mes", y="CUSTO_TOTAL",
-                                title="Evolução Mensal dos Custos", markers=True),
+                                title="Evolução Mensal dos Custos", 
+                                markers=True,
+                                labels={"CUSTO_TOTAL": "Custo Total (R$)"}),
                         use_container_width=True
                     )
 
