@@ -361,47 +361,61 @@ if uploaded_file is not None:
 
         # Gráfico de cruzamento de dados
         if dimensao_x and dimensao_y:
-            # Preparar dados para o gráfico
-            if dimensao_x == "Mês":
-                dados_x = df_cancel['Y-M']
-            elif dimensao_x == "Navio":
-                dados_x = df_cancel[col_navio]
-            elif dimensao_x == "Armador":
-                dados_x = df_cancel[col_armador] if col_armador else None
-            elif dimensao_x == "Rota":
-                dados_x = df_cancel[col_rota]
-            elif dimensao_x == "Tipo de Navio":
-                dados_x = df_cancel[col_tipo_navio]
+            try:
+                # Preparar dados para o gráfico
+                if dimensao_x == "Mês":
+                    dados_x = df_cancel['Y-M'].astype(str)
+                elif dimensao_x == "Navio":
+                    dados_x = df_cancel[col_navio].astype(str)
+                elif dimensao_x == "Armador":
+                    dados_x = df_cancel[col_armador].astype(str) if col_armador else None
+                elif dimensao_x == "Rota":
+                    dados_x = df_cancel[col_rota].astype(str)
+                elif dimensao_x == "Tipo de Navio":
+                    dados_x = df_cancel[col_tipo_navio].astype(str)
 
-            if dimensao_y == "Quantidade de Cancelamentos":
-                dados_y = df_cancel.groupby(dados_x).size()
-            elif dimensao_y == "Custo Total":
-                dados_y = df_cancel.groupby(dados_x)['CUSTO_TOTAL'].sum()
-            elif dimensao_y == "TEUs":
-                dados_y = df_cancel.groupby(dados_x)[col_conteineres].sum()
-            elif dimensao_y == "Tempo de Permanência":
-                dados_y = df_cancel.groupby(dados_x)['Tempo_Permanencia'].mean()
+                if dados_x is not None:
+                    if dimensao_y == "Quantidade de Cancelamentos":
+                        dados_y = df_cancel.groupby(dados_x).size()
+                    elif dimensao_y == "Custo Total":
+                        dados_y = df_cancel.groupby(dados_x)['CUSTO_TOTAL'].sum()
+                    elif dimensao_y == "TEUs":
+                        dados_y = df_cancel.groupby(dados_x)[col_conteineres].sum()
+                    elif dimensao_y == "Tempo de Permanência":
+                        dados_y = df_cancel.groupby(dados_x)['Tempo_Permanencia'].mean()
 
-            # Criar DataFrame para o gráfico
-            df_grafico = pd.DataFrame({
-                'x': dados_x,
-                'y': dados_y
-            }).reset_index()
+                    # Criar DataFrame para o gráfico
+                    df_grafico = pd.DataFrame({
+                        dimensao_x: dados_x.unique(),
+                        dimensao_y: dados_y.values
+                    })
 
-            # Criar gráfico
-            fig = px.bar(
-                df_grafico,
-                x='x',
-                y='y',
-                title=f"{dimensao_y} por {dimensao_x}",
-                labels={
-                    "x": dimensao_x,
-                    "y": dimensao_y
-                },
-                color='y',
-                color_continuous_scale='Viridis'
-            )
-            st.plotly_chart(fig, use_container_width=True)
+                    # Ordenar por valores
+                    df_grafico = df_grafico.sort_values(by=dimensao_y, ascending=False)
+
+                    # Criar gráfico
+                    fig = px.bar(
+                        df_grafico,
+                        x=dimensao_x,
+                        y=dimensao_y,
+                        title=f"{dimensao_y} por {dimensao_x}",
+                        color=dimensao_y,
+                        color_continuous_scale='Viridis'
+                    )
+                    
+                    # Ajustar layout
+                    fig.update_layout(
+                        xaxis_title=dimensao_x,
+                        yaxis_title=dimensao_y,
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning(f"Não há dados disponíveis para a dimensão {dimensao_x}")
+            except Exception as e:
+                st.error(f"Erro ao criar gráfico: {str(e)}")
+                st.info("Tente selecionar outras dimensões para análise")
 
         # Gráfico de pizza com Plotly
         fig = px.pie(
