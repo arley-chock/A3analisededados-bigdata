@@ -260,10 +260,21 @@ if uploaded_file is not None:
     col_conteineres = 'Movs' if 'Movs' in df.columns else None
 
     # Filtrar cancelamentos
-    df[col_status] = df[col_status].astype(str).str.strip().str.lower()
-    valores_cancelados = ['cancelado', 'cancelada', 'rejeitado', 'rej.', 'canceled']
-    mask_cancel = df[col_status].isin(valores_cancelados)
-    df_cancel = df.loc[mask_cancel].copy()
+    if col_status is not None:
+        df[col_status] = df[col_status].astype(str).str.strip().str.lower()
+        valores_cancelados = ['cancelado', 'cancelada', 'rejeitado', 'rej.', 'canceled']
+        mask_cancel = df[col_status].isin(valores_cancelados)
+        df_cancel = df.loc[mask_cancel].copy()
+
+        # Converter colunas numéricas
+        if col_conteineres is not None:
+            df_cancel[col_conteineres] = pd.to_numeric(df_cancel[col_conteineres], errors='coerce').fillna(0)
+            df[col_conteineres] = pd.to_numeric(df[col_conteineres], errors='coerce').fillna(0)
+
+        # Converter datas
+        if col_data is not None:
+            df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], errors='coerce')
+            df[col_data] = pd.to_datetime(df[col_data], errors='coerce')
 
     # Preparar dados para o resumo
     contagem_navios = df_cancel[col_navio].value_counts().reset_index()
@@ -286,7 +297,7 @@ if uploaded_file is not None:
         
         # Definir max_mes antes de usar
         max_mes = None
-        if not contagem_mensal.empty and len(contagem_mensal) > 0:
+        if not contagem_mensal.empty:
             max_mes = contagem_mensal.loc[contagem_mensal['Cancelamentos'].idxmax()]
         
         resumo_texto = f"""
@@ -296,7 +307,7 @@ if uploaded_file is not None:
         
         if max_mes is not None:
             resumo_texto += f"""
-            - **Mês com mais cancelamentos:** {max_mes['Y-M'].strftime('%Y-%m')} ({int(max_mes['Cancelamentos'])} cancelamentos)
+            - **Mês com mais cancelamentos:** {max_mes['Y-M']} ({int(max_mes['Cancelamentos'])} cancelamentos)
             """
         
         st.markdown(resumo_texto)
@@ -371,16 +382,23 @@ if uploaded_file is not None:
             elif dimensao_y == "Tempo de Permanência":
                 dados_y = df_cancel.groupby(dados_x)['Tempo_Permanencia'].mean()
 
+            # Criar DataFrame para o gráfico
+            df_grafico = pd.DataFrame({
+                'x': dados_x,
+                'y': dados_y
+            }).reset_index()
+
             # Criar gráfico
             fig = px.bar(
-                x=dados_x,
-                y=dados_y,
+                df_grafico,
+                x='x',
+                y='y',
                 title=f"{dimensao_y} por {dimensao_x}",
                 labels={
                     "x": dimensao_x,
                     "y": dimensao_y
                 },
-                color=dados_y,
+                color='y',
                 color_continuous_scale='Viridis'
             )
             st.plotly_chart(fig, use_container_width=True)
