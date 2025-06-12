@@ -17,6 +17,23 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+from typing import Optional, Dict, List, Tuple
+import logging
+import re
+
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Constantes
+VALORES_CANCELADOS = ['cancelado', 'cancelada', 'rejeitado', 'rej.', 'canceled']
+REFERENCIAS_CUSTOS = {
+    'THC': 1200.00,  # R$ por TEU
+    'ARMAZENAGEM': 575.00,  # R$ por TEU/dia
+    'DESPACHANTE': 950.00,  # R$ fixo
+    'SCANNER': 95.00,  # R$ por contêiner
+    'CAMBIO': 5.10  # R$/US$
+}
 
 def ajustar_layout_grafico(fig, altura=500):
     fig.update_layout(
