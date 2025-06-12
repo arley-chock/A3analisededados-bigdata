@@ -169,6 +169,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌍 Rotas", "📊 Adicionais", "💰 Custos"
 ])
 
+# Aba 1: Visão Geral
 with tab1:
     st.header("📈 Visão Geral dos Cancelamentos")
     c1, c2, c3 = st.columns(3, gap="large")
@@ -190,6 +191,7 @@ with tab1:
     st.subheader("📋 Primeiros Registros")
     st.dataframe(df_cancel.head(), hide_index=True, use_container_width=True)
 
+# Aba 2: Top Navios
 with tab2:
     st.header("🚢 Top 10 Navios Mais Cancelados")
     if contagem_navios['QuantidadeCancelamentos'].nunique() == 1:
@@ -206,7 +208,7 @@ with tab2:
                 contagem_navios.head(10),
                 hide_index=True,
                 use_container_width=True,
-                column_config={"QuantidadeCancelamentos": st.column_config.NumberColumn(format="%,d")}
+                column_config={"QuantidadeCancelamentos": st.column_config.NumberColumn(format="R$ %,.0f")}
             )
         lider = contagem_navios.iloc[0]['Navio']
         df_l = df_cancel[df_cancel['Navio'] == lider].copy()
@@ -224,6 +226,7 @@ with tab2:
                 fig_evo = px.line(evo, x='Mes', y='Cancelamentos', markers=True)
                 st.plotly_chart(theme_fig(fig_evo, altura=350), use_container_width=True)
 
+# Aba 3: Temporal
 with tab3:
     st.header("📅 Análise Temporal")
     m1, m2 = st.columns(2, gap="large")
@@ -238,6 +241,7 @@ with tab3:
         fig = px.line(cont_mensal, x='Mes', y='Cancelamentos', markers=True, title='Evolução Mensal')
         st.plotly_chart(theme_fig(fig), use_container_width=True)
 
+# Aba 4: Rotas
 with tab4:
     st.header("🌍 Análise de Rotas")
     if col_rota:
@@ -257,6 +261,7 @@ with tab4:
     else:
         st.warning("Coluna de rotas não encontrada.")
 
+# Aba 5: Adicionais
 with tab5:
     st.header("📊 Análises Adicionais")
     sub1, sub2, sub3 = st.tabs(["Tipo de Navio","Contêineres","Armadores"])
@@ -316,73 +321,67 @@ with tab5:
         else:
             st.warning("Coluna 'Armador' não encontrada.")
 
+# Aba 6: Custos
 with tab6:
     st.header("💰 Análise de Custos")
     C = {"TEU":1200.0,"OPER":1150.0,"DOC":950.0,"ARM_DIA":575.0,"ARM_DIAS":2,"INSP":95.0}
-    def calc_custos(df, col_t):
-        df = df.copy()
-        df[col_t] = pd.to_numeric(df[col_t], errors='coerce').fillna(0)
-        df["C_TEUS"] = df[col_t]*C["TEU"]
-        df["C_OPER"] = C["OPER"]
-        df["C_DOC"]  = C["DOC"]
-        df["C_ARM"]  = df[col_t]*C["ARM_DIA"]*C["ARM_DIAS"]
-        df["C_INSP"]= C["INSP"]
-        df["CUSTO_TOTAL"] = df[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum(axis=1)
-        return df
 
     if col_conteineres:
-        df_c = calc_custos(df_cancel, col_conteineres)
+        # calcula custos linha a linha
+        df_c = df_cancel.copy()
+        df_c[col_conteineres] = pd.to_numeric(df_c[col_conteineres], errors='coerce').fillna(0)
+        df_c["C_TEUS"] = df_c[col_conteineres] * C["TEU"]
+        df_c["C_OPER"] = C["OPER"]
+        df_c["C_DOC"]  = C["DOC"]
+        df_c["C_ARM"]  = df_c[col_conteineres] * C["ARM_DIA"] * C["ARM_DIAS"]
+        df_c["C_INSP"]= C["INSP"]
+        df_c["CUSTO_TOTAL"] = df_c[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum(axis=1)
 
-        # Métricas de custo
+        # métricas
         m1, m2, m3 = st.columns(3, gap="large")
         with m1:
-            st.metric("Total Perdido",
-                      f"R$ {df_c['CUSTO_TOTAL'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.metric("Total Perdido", f"R$ {df_c['CUSTO_TOTAL'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         with m2:
-            st.metric("Médio por Cancel.",
-                      f"R$ {df_c['CUSTO_TOTAL'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            st.metric("Médio por Cancel.", f"R$ {df_c['CUSTO_TOTAL'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         with m3:
-            st.metric("TEUs Afetados",
-                      f"{df_c[col_conteineres].sum():,.0f}".replace(",", "."))
+            st.metric("TEUs Afetados", f"{df_c[col_conteineres].sum():,.0f}".replace(",", "."))
 
-        # Distribuição de custos
+        # distribuição
         fig = px.box(df_c, y="CUSTO_TOTAL", title="Distribuição de Custo por Cancelamento")
         st.plotly_chart(theme_fig(fig), use_container_width=True)
 
-        # Evolução mensal de custos
+        # evolução mensal
         if col_data:
             df_c["Mes"] = df_c[col_data].dt.to_period("M").astype(str)
             cm = df_c.groupby("Mes")["CUSTO_TOTAL"].sum().reset_index()
             fig = px.line(cm, x="Mes", y="CUSTO_TOTAL", markers=True, title="Evolução Mensal de Custos")
             st.plotly_chart(theme_fig(fig), use_container_width=True)
 
-        # Componentes de custo
-        total_components = df_c[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum()
-        total_components.index = [
-            "THC (R$/TEU)",
-            "Taxa Terminal",
-            "Despachante",
-            "Armazenagem (2 dias)",
-            "Scanner"
-        ]
-        comp_numerical = total_components.reset_index()
-        comp_numerical.columns = ["Tipo de Custo","Valor"]
+        # componentes de custo
+        totals = df_c[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum()
+        comp_df = pd.DataFrame({
+            "Tipo de Custo": [
+                "THC (R$/TEU)",
+                "Taxa Terminal",
+                "Despachante",
+                "Armazenagem (2 dias)",
+                "Scanner"
+            ],
+            "Valor": totals.values
+        })
 
-        # Tabela formatada
-        comp_display = comp_numerical.copy()
-        comp_display["Valor"] = comp_display["Valor"]\
-            .apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-
+        # tabela formatada
         st.subheader("Componentes de Custo")
-        st.dataframe(comp_display, hide_index=True, use_container_width=True)
-
-        # Gráfico de pizza
-        fig = px.pie(
-            comp_numerical,
-            values="Valor",
-            names="Tipo de Custo",
-            title="Distribuição de Componentes"
+        st.dataframe(
+            comp_df,
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Valor": st.column_config.NumberColumn(format="R$ %,.2f")
+            }
         )
+        # gráfico de pizza
+        fig = px.pie(comp_df, values="Valor", names="Tipo de Custo", title="Distribuição de Componentes")
         st.plotly_chart(theme_fig(fig, altura=350), use_container_width=True)
 
     else:
