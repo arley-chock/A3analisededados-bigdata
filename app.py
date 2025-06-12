@@ -249,10 +249,10 @@ if uploaded_file is not None:
     df_cancel[col_data] = pd.to_datetime(df_cancel[col_data], dayfirst=True, errors='coerce')
     df_cancel['Ano'] = df_cancel[col_data].dt.year
     df_cancel['Mês'] = df_cancel[col_data].dt.month
-    df_cancel['Y-M'] = df_cancel[col_data].dt.to_period('M').astype(str)
-    
-    # Análise mensal
-    contagem_mensal = df_cancel.groupby('Y-M').size().reset_index(name='Cancelamentos')
+    # Remover registros sem data válida antes de criar 'Y-M'
+    df_cancel_valid = df_cancel.dropna(subset=[col_data]).copy()
+    df_cancel_valid['Y-M'] = df_cancel_valid[col_data].dt.to_period('M').astype(str)
+    contagem_mensal = df_cancel_valid.groupby('Y-M').size().reset_index(name='Cancelamentos')
     contagem_mensal['Y-M'] = pd.to_datetime(contagem_mensal['Y-M'], format='%Y-%m')
     contagem_mensal = contagem_mensal.sort_values('Y-M')
 
