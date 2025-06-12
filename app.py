@@ -437,8 +437,10 @@ with tab5:
         nums = df_cancel.select_dtypes(include=[np.number]).columns
         if len(nums) > 1:
             corr = df_cancel[nums].corr()
+            # CORREÇÃO: passar a matriz diretamente, sem `data_frame=`
             fig_corr = px.imshow(
-                data_frame=corr, text_auto=True,
+                corr,
+                text_auto=True,
                 title="Matriz de Correlação",
                 color_continuous_scale='RdBu'
             )
