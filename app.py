@@ -20,19 +20,13 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import os
 
-def ajustar_layout_grafico(fig, altura=500):
-    fig.update_layout(
-        height=altura,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#E0E0E0'),
-        margin=dict(l=20, r=20, t=40, b=20)
-    )
-    return fig
+# Formatação de moeda BRL
+def br_currency(x: float) -> str:
+    return f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Deve ser o primeiro comando Streamlit
+# Configuração do tema e layout
 st.set_page_config(
     page_title="⚓ Dashboard Cancelamentos de Navios",
     page_icon="🚢",
@@ -40,59 +34,101 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Formatação de moeda BRL
-def br_currency(x: float) -> str:
-    return f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+# Função para ajustar layout dos gráficos
+def ajustar_layout_grafico(fig, altura=500):
+    fig.update_layout(
+        height=altura,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E0E0'),
+        margin=dict(l=20, r=20, t=40, b=20),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+    )
+    return fig
 
-# ──────────────────────────────────────────────────────────────────────────────
 # CSS customizado
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
-  background: linear-gradient(180deg,#0a1f2f 0%,#02111e 100%);
-  color: #E0E0E0;
+    background: linear-gradient(180deg,#0a1f2f 0%,#02111e 100%);
+    color: #E0E0E0;
 }
 .card {
-  background: rgba(255,255,255,0.07);
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+    background: rgba(255,255,255,0.07);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.metric-card {
+    background: rgba(255,255,255,0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
 }
 .js-plotly-plot {
-  margin: 1rem 0 !important;
+    margin: 1rem 0 !important;
+}
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2rem;
+}
+.stTabs [data-baseweb="tab"] {
+    height: 4rem;
+    white-space: pre-wrap;
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 4px 4px 0 0;
+    gap: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+.stTabs [aria-selected="true"] {
+    background-color: rgba(255,255,255,0.1);
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Cabeçalho
 st.markdown("""
 <div class="card" style="text-align:center;">
-  <h1>🚢 Dashboard de Cancelamentos de Navios</h1>
-  <p><b>Projeto Acadêmico</b> – Arley do Nascimento Vinagre, Vinicius Santana, Tauan Santos Santana</p>
-  <em>Objetivo: analisar planilhas Excel de portos sobre navios cancelados, com gráficos e métricas interativas.</em>
+    <h1>🚢 Dashboard de Cancelamentos de Navios</h1>
+    <p><b>Projeto Acadêmico</b> – Arley do Nascimento Vinagre, Vinicius Santana, Tauan Santos Santana</p>
+    <em>Objetivo: analisar planilhas Excel de portos sobre navios cancelados, com gráficos e métricas interativas.</em>
 </div>
 """, unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Sidebar: Upload & referências de custo
 with st.sidebar:
     st.header("📂 Upload & Custos")
-    uploaded_file = st.file_uploader("Carregue um arquivo Excel (.xlsx)", type="xlsx")
+    
+    # Opção para usar arquivo padrão ou upload
+    use_default = st.checkbox("Usar arquivo padrão", value=True)
+    
+    if use_default:
+        default_file = "ProgramacaoDeNavios (1) (1).xlsx"
+        if os.path.exists(default_file):
+            uploaded_file = open(default_file, 'rb')
+        else:
+            st.error("Arquivo padrão não encontrado!")
+            uploaded_file = None
+    else:
+        uploaded_file = st.file_uploader("Carregue um arquivo Excel (.xlsx)", type="xlsx")
+    
     st.markdown("---")
     st.markdown("### 💰 Custos de Referência (2024-25)")
-    st.write(f"- THC: {br_currency(1200)} / TEU")
-    st.write(f"- Operação Terminal: {br_currency(1150)} / cancel.")
-    st.write(f"- Despachante: {br_currency(950)}")
-    st.write(f"- Armazenagem: {br_currency(575)} / TEU / dia × 2 dias")
-    st.write(f"- Inspeção: {br_currency(95)} / contêiner")
+    
+    # Custos editáveis
+    thc = st.number_input("THC (R$/TEU)", value=1200.0, step=100.0)
+    oper = st.number_input("Operação Terminal (R$/cancel.)", value=1150.0, step=100.0)
+    doc = st.number_input("Despachante (R$)", value=950.0, step=50.0)
+    arm_day = st.number_input("Armazenagem (R$/TEU/dia)", value=575.0, step=25.0)
+    arm_days = st.number_input("Dias de Armazenagem", value=2, min_value=1, max_value=30)
+    insp = st.number_input("Inspeção (R$/contêiner)", value=95.0, step=5.0)
 
 if not uploaded_file:
-    st.warning("Por favor, carregue um arquivo Excel para iniciar a análise.")
+    st.warning("Por favor, carregue um arquivo Excel ou selecione o arquivo padrão para iniciar a análise.")
     st.stop()
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Leitura e pré-processamento
 df = pd.read_excel(uploaded_file)
 df.columns = df.columns.str.strip()
@@ -127,7 +163,15 @@ if col_conteineres:
     df_canc[col_conteineres] = pd.to_numeric(df_canc[col_conteineres], errors='coerce').fillna(0)
 
 # Calcular custos por cancelamento
-C = {"THC":1200,"OPER":1150,"DOC":950,"ARM_DAY":575,"ARM_DAYS":2,"INSP":95}
+C = {
+    "THC": thc,
+    "OPER": oper,
+    "DOC": doc,
+    "ARM_DAY": arm_day,
+    "ARM_DAYS": arm_days,
+    "INSP": insp
+}
+
 if col_conteineres:
     df_canc["C_TEUS"]      = df_canc[col_conteineres] * C["THC"]
     df_canc["C_OPER"]      = C["OPER"]
@@ -136,7 +180,6 @@ if col_conteineres:
     df_canc["C_INSP"]      = C["INSP"]
     df_canc["CUSTO_TOTAL"] = df_canc[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]].sum(axis=1)
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Criação das abas
 tabs = st.tabs([
     "📈 Visão Geral",
@@ -148,24 +191,44 @@ tabs = st.tabs([
     "💰 Custos"
 ])
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Aba 1: Visão Geral
 with tabs[0]:
     st.subheader("Visão Geral dos Cancelamentos")
+    
+    # Métricas principais
     total = len(df)
     canc  = len(df_canc)
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total de Registros", f"{total:,}")
-    col2.metric("Total Cancelado",    f"{canc:,}", f"{canc/total*100:.1f}%")
-    if col_conteineres:
-        col3.metric("TEUs Afetados", f"{int(df_canc[col_conteineres].sum()):,}")
-    if col_data and not df_canc.empty:
-        periodo = f"{df_canc[col_data].min().strftime('%b %Y')} → {df_canc[col_data].max().strftime('%b %Y')}"
-        col4.metric("Período", periodo)
+    
+    with col1:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Total de Registros", f"{total:,}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Total Cancelado", f"{canc:,}", f"{canc/total*100:.1f}%")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        if col_conteineres:
+            st.metric("TEUs Afetados", f"{int(df_canc[col_conteineres].sum()):,}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        if col_data and not df_canc.empty:
+            periodo = f"{df_canc[col_data].min().strftime('%b %Y')} → {df_canc[col_data].max().strftime('%b %Y')}"
+            st.metric("Período", periodo)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Gráfico de pizza
     fig = px.pie(
         names=["Cancelados","Não Cancelados"],
         values=[canc, total-canc],
-        color_discrete_sequence=px.colors.qualitative.Set3
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        title="Distribuição de Cancelamentos"
     )
     st.plotly_chart(ajustar_layout_grafico(fig, 300), use_container_width=True)
 
