@@ -196,13 +196,13 @@ with st.sidebar:
             <h3 style='margin-bottom: 0.7rem;'>💰 Referências de Custos</h3>
             <p style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Valores baseados em tabelas 2024-25:</p>
             <ul style='font-size: 0.85rem; padding-left: 1rem;'>
-                <li>THC: Cosco "Brazil Local Charges"</li>
-                <li>Armazenagem: Tabela Ecoporto 2024/25</li>
-                <li>Despachante: Tabela Sindaesc 2024</li>
-                <li>Scanner: Santos Brasil (reajuste 2024)</li>
+                <li>THC: Cosco "Brazil Local Charges" <b>(R$ 1.200,00 por TEU)</b></li>
+                <li>Armazenagem: Tabela Ecoporto 2024/25 <b>(R$ 575,00/TEU/dia)</b></li>
+                <li>Despachante: Tabela Sindaesc 2024 <b>(R$ 950,00)</b></li>
+                <li>Scanner: Santos Brasil (reajuste 2024) <b>(R$ 95,00 por contêiner)</b></li>
             </ul>
             <p style='font-size: 0.8rem; margin-top: 0.5rem; color: #4CAF50;'>
-                Câmbio médio: R$ 5,10/US$ 1
+                Câmbio médio: <b>R$ 5,10</b>/US$ 1
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -990,13 +990,13 @@ if uploaded_file is not None:
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Custo Total Perdido",
-                            f"R$ {df_cancel['CUSTO_TOTAL'].sum():,.2f}")
+                            f"R$ {df_cancel['CUSTO_TOTAL'].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 with col2:
                     st.metric("Custo Médio por Cancelamento",
-                            f"R$ {df_cancel['CUSTO_TOTAL'].mean():,.2f}")
+                            f"R$ {df_cancel['CUSTO_TOTAL'].mean():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 with col3:
                     st.metric("Total de TEUs Afetados",
-                            f"{df_cancel[col_conteineres].sum():,.0f}")
+                            f"{df_cancel[col_conteineres].sum():,.0f}".replace(",", "."))
 
                 # Gráficos de distribuição e evolução temporal
                 st.plotly_chart(
@@ -1012,6 +1012,8 @@ if uploaded_file is not None:
                                     .sum()
                                     .reset_index()
                                     .assign(Mes=lambda d: d["Mes"].astype(str)))
+
+                    custos_mensais["CUSTO_TOTAL"] = custos_mensais["CUSTO_TOTAL"].apply(lambda x: float(f"{x:.2f}"))
 
                     st.plotly_chart(
                         px.line(custos_mensais, x="Mes", y="CUSTO_TOTAL",
@@ -1035,6 +1037,9 @@ if uploaded_file is not None:
                     .reset_index()
                     .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (BRL)"})
                 )
+
+                # Formatar valores monetários na tabela de componentes
+                componentes["Valor Total (BRL)"] = componentes["Valor Total (BRL)"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
                 # Adicionar detalhes dos custos
                 st.markdown("""
@@ -1075,6 +1080,10 @@ if uploaded_file is not None:
                                         })
                                         .sort_values('Custo Total', ascending=False))
 
+                    # Formatar valores monetários
+                    custos_por_armador['Custo Total'] = custos_por_armador['Custo Total'].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                    custos_por_armador['Custo Médio'] = custos_por_armador['Custo Médio'].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
                     col1, col2 = st.columns(2)
                     with col1:
                         st.write("Top 10 Armadores por Custo Total:")
@@ -1085,8 +1094,11 @@ if uploaded_file is not None:
                         )
 
                     with col2:
+                        # Para o gráfico, remover o R$ e converter para float
+                        custos_por_armador_graf = custos_por_armador.head(10).copy()
+                        custos_por_armador_graf['Custo Total'] = custos_por_armador_graf['Custo Total'].str.replace('R$ ', '').str.replace('.', '').str.replace(',', '.').astype(float)
                         fig = px.bar(
-                            custos_por_armador.head(10),
+                            custos_por_armador_graf,
                             x=col_armador,
                             y='Custo Total',
                             title='Top 10 Armadores por Custo Total',
