@@ -203,7 +203,20 @@ contagem_navios = (
     df_cancel[col_navio]
     .value_counts()
     .reset_index()
-    .rename(columns={'index':'Navio', col_navio:'Cancelamentos'})
+    .rename(columns={'index': 'Navio', col_navio: 'Cancelamentos'})
+)
+
+# Verificar se há dados antes de prosseguir
+if contagem_navios.empty:
+    st.warning("Não foram encontrados dados de navios para análise.")
+    st.stop()
+
+# Criar o gráfico de pizza
+fig_pie = px.pie(
+    names=['Cancelados', 'Não Cancelados'],
+    values=[len(df_cancel), len(df) - len(df_cancel)],
+    title='Distribuição de Cancelamentos',
+    color_discrete_sequence=px.colors.qualitative.Set3
 )
 
 contagem_mensal = (
@@ -311,13 +324,6 @@ with tab1:
         dias = (df_cancel[col_data].max() - df_cancel[col_data].min()).days
         c4.metric("Período Analisado", f"{dias:,} dias")
 
-    fig_pie = px.pie(
-        names=["Cancelados","Não Cancelados"],
-        values=[len(df_cancel), len(df)-len(df_cancel)],
-        title="Proporção de Cancelamentos",
-        hole=0.4,
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
     st.plotly_chart(ajustar_layout_grafico(fig_pie, 350), use_container_width=True)
 
 # ─── Tab 2: Top Navios & Armadores
@@ -466,25 +472,53 @@ with tab6:
         )
         st.plotly_chart(ajustar_layout_grafico(fig_box), use_container_width=True)
 
-        comp = (
-            df_cancel[["C_TEUS","C_OPER","C_DOC","C_ARM","C_INSP"]]
+        # Detalhamento dos componentes de custo
+        componentes = (
+            df_cancel[["C_TEUS", "C_OPER", "C_DOC", "C_ARM", "C_INSP"]]
             .sum()
-            .rename({
-                "C_TEUS":"THC",
-                "C_OPER":"Cancelamento",
-                "C_DOC":"Despachante",
-                "C_ARM":"Armazenagem",
-                "C_INSP":"Scanner"
+            .rename(index={
+                "C_TEUS": "THC (Terminal Handling Charge)",
+                "C_OPER": "Taxa de Cancelamento",
+                "C_DOC":  "Honorários de Despacho",
+                "C_ARM":  "Armazenagem (2 dias)",
+                "C_INSP": "Scanner/Fitossanitária"
             })
             .reset_index()
-            .rename(columns={"index":"Tipo","C_TEUS":"Valor"})
+            .rename(columns={"index": "Tipo de Custo", 0: "Valor Total (BRL)"})
         )
-        fig_pie2 = px.pie(
-            comp, names='Tipo', values=0,
-            title="Composição de Custos",
-            color_discrete_sequence=px.colors.qualitative.Set3
+
+        # Formatar valores monetários na tabela de componentes (apenas para exibição)
+        componentes_formatado = componentes.copy()
+        componentes_formatado["Valor Total (BRL)"] = componentes_formatado["Valor Total (BRL)"].apply(
+            lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         )
-        st.plotly_chart(ajustar_layout_grafico(fig_pie2,400), use_container_width=True)
-        st.dataframe(comp.assign(Valor=comp[0].map(lambda x: f"R$ {x:,.2f}")), use_container_width=True, hide_index=True)
+
+        # Adicionar detalhes dos custos
+        st.markdown("""
+            <div style='background: rgba(255,255,255,0.10); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;'>
+                <h4 style='color: #4CAF50; margin-bottom: 0.7rem;'>📊 Detalhamento dos Custos</h4>
+                <p style='font-size: 0.9rem; margin-bottom: 0.5rem;'>Composição dos valores por item:</p>
+                <ul style='font-size: 0.85rem; padding-left: 1rem;'>
+                    <li><strong>THC:</strong> R$ 1.200,00 por TEU (20' dry)</li>
+                    <li><strong>Taxa de Cancelamento:</strong> R$ 1.150,00 por operação</li>
+                    <li><strong>Despachante:</strong> R$ 950,00 (mínimo tabela Sindaesc)</li>
+                    <li><strong>Armazenagem:</strong> R$ 575,00/TEU/dia × 2 dias</li>
+                    <li><strong>Scanner:</strong> R$ 95,00 por contêiner</li>
+                </ul>
+            </div>
+        """, unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.dataframe(componentes_formatado, hide_index=True, use_container_width=True)
+        with col2:
+            fig_pie2 = px.pie(
+                componentes,
+                values="Valor Total (BRL)",
+                names="Tipo de Custo",
+                title="Distribuição dos Custos",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(ajustar_layout_grafico(fig_pie2, 400), use_container_width=True)
     else:
         st.info("Não foi possível calcular custos (coluna de TEUs ausente).")
