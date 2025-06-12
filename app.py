@@ -49,17 +49,18 @@ with st.sidebar:
     st.markdown("### 🔍 Pesquisa e Modelos")
     
     # Barra de pesquisa
-    termo_pesquisa = st.text_input("Pesquisar por navio, armador ou rota")
+    termo_pesquisa = st.text_input("Pesquisar por navio, armador ou rota", key="search_term_input")
     
     # Modelos de relatórios
     st.markdown("### 📋 Modelos de Relatórios")
     modelo_selecionado = st.selectbox(
         "Selecione um modelo de relatório",
-        ["Análise Completa", "Análise de Custos", "Análise por Armador", "Análise Temporal"]
+        ["Análise Completa", "Análise de Custos", "Análise por Armador", "Análise Temporal"],
+        key="report_model_select"
     )
     
     # Botão para aplicar modelo
-    if st.button("Aplicar Modelo"):
+    if st.button("Aplicar Modelo", key="apply_model_button"):
         st.session_state['modelo_atual'] = modelo_selecionado
         st.session_state['termo_pesquisa'] = termo_pesquisa
 
@@ -224,12 +225,23 @@ if uploaded_file is not None:
     col_conteineres = 'Movs' if 'Movs' in df.columns else None
     col_armador = 'Armador' if 'Armador' in df.columns else None
 
+    # Aplicar termo de pesquisa globalmente, se houver
+    if 'termo_pesquisa' in st.session_state and st.session_state['termo_pesquisa']:
+        termo = st.session_state['termo_pesquisa'].lower()
+        df_filtered = df[
+            (df[col_navio].astype(str).str.lower().str.contains(termo, na=False)) |
+            (df[col_armador].astype(str).str.lower().str.contains(termo, na=False) if col_armador else False) |
+            (df[col_rota].astype(str).str.lower().str.contains(termo, na=False) if col_rota else False)
+        ].copy()
+    else:
+        df_filtered = df.copy()
+
     # Filtrar cancelamentos
     if col_status is not None:
-        df[col_status] = df[col_status].astype(str).str.strip().str.lower()
+        df_filtered[col_status] = df_filtered[col_status].astype(str).str.strip().str.lower()
         valores_cancelados = ['cancelado', 'cancelada', 'rejeitado', 'rej.', 'canceled']
-        mask_cancel = df[col_status].isin(valores_cancelados)
-        df_cancel = df.loc[mask_cancel].copy()
+        mask_cancel = df_filtered[col_status].isin(valores_cancelados)
+        df_cancel = df_filtered.loc[mask_cancel].copy()
 
         # Converter colunas numéricas
         if col_conteineres is not None:
