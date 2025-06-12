@@ -1,6 +1,5 @@
-Claro! Com base nas informações disponíveis no repositório [arley-chock/A3analisededados-bigdata](https://github.com/arley-chock/A3analisededados-bigdata), aqui está um `README.md` completo e estruturado em Markdown:
+https://hggpqvxqenlf5untxwn7c2.streamlit.app/
 
-```markdown
 # 🧭 A3 de Análise de Dados e Big Data
 
 ## 🔍 Descrição
