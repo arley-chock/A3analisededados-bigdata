@@ -134,7 +134,7 @@ df = pd.read_excel(uploaded_file)
 df.columns = df.columns.str.strip()
 
 # Mapeamento de colunas essenciais
-col_navio       = 'Navio / Viagem'         if 'Navio / Viagem'         in df.columns else None
+col_navio       = 'Navio / Viagem1'         if 'Navio / Viagem'         in df.columns else None
 col_status      = 'Situação'               if 'Situação'               in df.columns else None
 col_data        = 'Estimativa Chegada ETA' if 'Estimativa Chegada ETA' in df.columns else None
 col_etd         = 'Estimativa Saída ETD'   if 'Estimativa Saída ETD'   in df.columns else None
@@ -235,7 +235,7 @@ with tabs[0]:
 # ──────────────────────────────────────────────────────────────────────────────
 # Aba 2: Navios
 with tabs[1]:
-    st.subheader("Top 10 Navios Cancelados")
+    st.subheader(" Navios Cancelados")
     cnt_nav = df_canc[col_navio].value_counts().head(10).reset_index()
     cnt_nav.columns = ["Navio","Cancelamentos"]
     fig = px.bar(
